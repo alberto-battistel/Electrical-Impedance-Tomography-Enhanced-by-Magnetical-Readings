@@ -3,7 +3,7 @@ clear
 close all
 init_eidors()
 
-import helpers.calc_area helpers.from_cart_2_cyl helpers.magnetic_acquisition
+% import helpers.calc_area helpers.from_cart_2_cyl helpers.magnetic_acquisition
 
 %%
 n_elec = 16;
@@ -30,15 +30,15 @@ coil_positions = [1.05, 1.05, 1].*coil_positions;
 
 %
 elem_centers = interp_mesh(imdl.fwd_model, 0); % center of elements
-elem_areas = calc_area(imdl.fwd_model.nodes, imdl.fwd_model.elems);
+elem_areas = helpers.calc_area(imdl.fwd_model.nodes, imdl.fwd_model.elems);
 
 vh_ = fwd_solve(img_h);
 vh = vh_.meas;
-bh_ = magnetic_acquisition(img_h, vh_, coil_positions, elem_centers, elem_areas);
+bh_ = helpers.magnetic_acquisition(img_h, vh_, coil_positions, elem_centers, elem_areas);
 
 %%
 unwraped_coords = repmat(coil_positions,n_elec,1);
-[coord_cyl, bh] = from_cart_2_cyl(unwraped_coords, bh_);
+[coord_cyl, bh] = helpers.from_cart_2_cyl(unwraped_coords, bh_);
 
 %%
 target_z = elec_vert_position + [-0.02, 0, 0.02, 0.04];
@@ -96,12 +96,12 @@ for iz = 1:length(target_z)
     %%
 
     elem_centers = interp_mesh(imdl.fwd_model, 0); % center of elements
-    elem_areas = calc_area(imdl.fwd_model.nodes, imdl.fwd_model.elems);
+    elem_areas = helpers.calc_area(imdl.fwd_model.nodes, imdl.fwd_model.elems);
 
     vi_ = fwd_solve(img_i);
     vi(:,iz) = vi_.meas;
-    bi_ = magnetic_acquisition(img_i, vi_, coil_positions, elem_centers, elem_areas);
-    [~, bi_cyl] = from_cart_2_cyl(unwraped_coords, bi_);
+    bi_ = helpers.magnetic_acquisition(img_i, vi_, coil_positions, elem_centers, elem_areas);
+    [~, bi_cyl] = helpers.from_cart_2_cyl(unwraped_coords, bi_);
     bi(:,:, iz) = bi_cyl;
 end
 
