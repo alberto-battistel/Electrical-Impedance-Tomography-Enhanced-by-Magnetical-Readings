@@ -3,8 +3,6 @@ clear
 close all
 init_eidors()
 
-% import helpers.calc_area helpers.from_cart_2_cyl helpers.magnetic_acquisition
-
 %%
 n_elec = 16;
 target.center = @(z) [0.0, 0.0, z];
