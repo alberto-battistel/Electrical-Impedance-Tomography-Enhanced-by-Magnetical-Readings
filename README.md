@@ -1,6 +1,6 @@
 # Electrical Impedance Tomography Enhanced by Magnetical Readings
 
-This version contains the data and produces the figures used for the __BMS2024/AUTOMED2024__ Poster Abstract Proceedings titled:
+This version contains the data and produces the figures used for the __[BMS2024/AUTOMED2024 conference in Villingen-Schwenningen](https://www.bms-24.org/)__ Poster Abstract Proceedings titled:
 
 __Enhance electrical impedance tomography with magnetic readings__
 
@@ -14,25 +14,12 @@ Schwenningen, Germany
 * Corresponding author, email: alberto.battistel@hs-furtwangen.de
 
 
-This repository was made for the conference paper:
-
-__Enhance electrical impedance tomography withmagnetic readings__
-
-by:
-A. Battistel 1*, A.C. Özen 2, J. Wilkie 1, R. Chen 1,3, D. von Elverfeldt 2, and K. Möller 1,3
-
-1. Institute of Technical Medicine (ITeM), Furtwangen University, Jakob-Kienzle-Strasse 17, 78054 Villingen-
-Schwenningen, Germany
-2. Division of Medical Physics, Department of Diagnostic and Interventional Radiology, University Medical Center Freiburg, Faculty of Medicine, University of Freiburg, Freiburg, Germany
-3. Faculty of Engineering, University of Freiburg, Freiburg, Germany
-* Corresponding author, email: alberto.battistel@hs-furtwangen.de
-
-for the [BMS 2024 conference in Villingen-Schwenningen](https://www.bms-24.org/), where it won a poster prize award.
+and it won a poster prize award.
 
 
 ## What you need to run this code
 
-- Matlab (it was tested with Matlab R2023b on a linux machine)
+- Matlab (it was tested with Matlab R2023b and R2024b on a linux machine)
 - [EIDORS 3.11 with Netgen 5.3](https://eidors3d.sourceforge.net/)
 - A matlab function called `init_eidors.mat` available to your path containing
 `run /path/to/eidors3d/startup.m` (see [EIDORS first tutorial](https://eidors3d.sourceforge.net/tutorial/EIDORS_basics/one_line.shtml))
