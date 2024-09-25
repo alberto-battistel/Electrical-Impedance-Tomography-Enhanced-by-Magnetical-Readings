@@ -12,6 +12,11 @@ my_notes.md
 *.pdf
 *.svg
 
+# but track all figures in figures folders
+!figures/*.fig
+!figures/*.pdf
+!figures/*.svg
+
 # MATLAB-specific
 *.m~
 *.mat~
