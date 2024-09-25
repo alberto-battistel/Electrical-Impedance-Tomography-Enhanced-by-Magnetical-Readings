@@ -27,8 +27,9 @@ and it won a poster prize award.
 
 ## How to use this repository
 
-By running `all_analysis_and_plot.m` you will get figure 1, and 2, of the conference paper plus additional plots that were used for the poster.
+By running `sphere_test.m` you will get figure 1, and 2, of the conference paper plus additional plots that were used for the poster.
 Please note that the figures you will get need formatting to appear exactly as those of the conference paper.
+There are also a lot of other files around, just entropy...
 
 
 ## Cite this
