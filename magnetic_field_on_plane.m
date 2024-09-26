@@ -11,10 +11,10 @@ target.radius = 0.02;
 elec_vert_position = 0.1;
 phantom_radius = 0.1;
 phantom_height = 2*phantom_radius;
-maxsz = 0.01;
+maxsz = 0.005;
 
 el_pos = [-360/n_elec/2+(0:n_elec-1).'/n_elec*360,elec_vert_position.*ones(16,1)];
-el_sz  = [0.01,0,0.05].*ones(size(el_pos,1),3);
+el_sz  = [0.01,0,0.01].*ones(size(el_pos,1),3);
 
 fmdl = ng_mk_cyl_models([phantom_height,phantom_radius,maxsz], el_pos, el_sz);
 imdl = mk_common_model('a2c2',16); % Will replace most 
