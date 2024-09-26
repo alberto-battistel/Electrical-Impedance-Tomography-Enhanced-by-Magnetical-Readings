@@ -14,7 +14,7 @@ phantom_height = 2*phantom_radius;
 maxsz = 0.005;
 
 el_pos = [-360/n_elec/2+(0:n_elec-1).'/n_elec*360,elec_vert_position.*ones(16,1)];
-el_sz  = [0.01,0,0.01].*ones(size(el_pos,1),3);
+el_sz  = [0.01,0,0.001].*ones(size(el_pos,1),3);
 
 fmdl = ng_mk_cyl_models([phantom_height,phantom_radius,maxsz], el_pos, el_sz);
 imdl = mk_common_model('a2c2',16); % Will replace most 
@@ -33,7 +33,7 @@ show_fem(fmdl,[0,1.012])
 %%
 %
 elem_centers = interp_mesh(imdl.fwd_model, 0); % center of elements
-elem_areas = helpers.calc_area(imdl.fwd_model.nodes, imdl.fwd_model.elems);
+elem_volume = helpers.calc_element_volume(imdl.fwd_model.elems, imdl.fwd_model.nodes);
 
 vh = fwd_solve(img_h);
 
@@ -43,7 +43,7 @@ show_current(img_h,vh.volt(:,1));
 e_curr = calc_elem_current(img_h, vh.volt(:,1));
 
 %% vert plane tangential to phantom
-n_points = 50;
+n_points = 51;
 x_dir = linspace(-phantom_radius, phantom_radius, n_points);
 y_dir = phantom_radius;
 z_dir = linspace(0, phantom_height, n_points);
@@ -56,7 +56,7 @@ hold on
 show_fem(fmdl,[0,1.012])
 plot3(B_positions(:,1), B_positions(:,2), B_positions(:,3), 'ro','MarkerFaceColor','r')
 
-B = helpers.calc_B_at_points(B_positions, elem_centers, e_curr, elem_areas);
+B = helpers.calc_B_at_points(B_positions, elem_centers, e_curr, elem_volume);
 
 %%
 abs_B = vecnorm(B,2,2);
@@ -75,7 +75,7 @@ end
 
 
 %% horz plane tangential to phantom
-n_points = 50;
+n_points = 51;
 x_dir = linspace(-phantom_radius, phantom_radius, n_points);
 y_dir = linspace(phantom_radius, 3*phantom_radius, n_points);
 z_dir = phantom_height/2;
@@ -88,7 +88,7 @@ hold on
 show_fem(fmdl,[0,1.012])
 plot3(B_positions(:,1), B_positions(:,2), B_positions(:,3), 'ro','MarkerFaceColor','r')
 
-B = helpers.calc_B_at_points(B_positions, elem_centers, e_curr, elem_areas);
+B = helpers.calc_B_at_points(B_positions, elem_centers, e_curr, elem_volume);
 
 %%
 abs_B = vecnorm(B,2,2);
@@ -108,7 +108,7 @@ end
 
 
 %% vert plane sagital to phantom
-n_points = 50;
+n_points = 51;
 x_dir = 0;
 y_dir = linspace(phantom_radius, 3*phantom_radius, n_points);
 z_dir = linspace(0, phantom_height, n_points);
@@ -121,7 +121,7 @@ hold on
 show_fem(fmdl,[0,1.012])
 plot3(B_positions(:,1), B_positions(:,2), B_positions(:,3), 'ro','MarkerFaceColor','r')
 
-B = helpers.calc_B_at_points(B_positions, elem_centers, e_curr, elem_areas);
+B = helpers.calc_B_at_points(B_positions, elem_centers, e_curr, elem_volume);
 
 %%
 abs_B = vecnorm(B,2,2);
