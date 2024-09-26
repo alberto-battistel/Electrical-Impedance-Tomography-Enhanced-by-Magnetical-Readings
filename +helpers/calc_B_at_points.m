@@ -1,4 +1,4 @@
-function [B] = calc_B_at_points(B_positions, elem_centers, e_curr, elem_areas)
+function [B] = calc_B_at_points(B_positions, elem_centers, e_curr, elem_vol)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 mu0 = 4*pi*1e-7;
@@ -12,7 +12,7 @@ for i_point = 1:length(B_positions)
     r_mag = vecnorm(r.',2,1).';
     l_non_zero = find(r_mag);
 
-    dB = mu0/(4*pi)*cross(e_curr(l_non_zero,:).*elem_areas(l_non_zero,:), r(l_non_zero,:))./norm(r(l_non_zero,:).^3); % magnetic flux density, in T
+    dB = mu0/(4*pi)*cross(e_curr(l_non_zero,:).*elem_vol(l_non_zero,:), r(l_non_zero,:))./norm(r(l_non_zero,:).^3); % magnetic flux density, in T
 
     B(i_point, :) = sum(dB,1);
 end
