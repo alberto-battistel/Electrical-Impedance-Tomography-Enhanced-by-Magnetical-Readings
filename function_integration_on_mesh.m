@@ -20,5 +20,5 @@ function_values = [1:length(original_points);...
 
 mesh_with_values = struct('points', original_points, 'connectivity_list', connectivity_list, 'areas', original_areas,'values', function_values);
 
-final_integral = integral_on_mesh(mesh_with_values)
+final_integral = helpers.integral_on_mesh(mesh_with_values)
 
