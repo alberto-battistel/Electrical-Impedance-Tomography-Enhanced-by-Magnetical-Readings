@@ -3,25 +3,29 @@ imdl = mk_common_model('a2c2',8);
 % imdl.fwd_model.elems
 original_points = [imdl.fwd_model.nodes, zeros(length(imdl.fwd_model.nodes),1)];
 connectivity_list = imdl.fwd_model.elems;
+original_normal = [0,0,1];
 
 % scale
 scale_vector = [0.25,0.25,1];
-[transformed_points] = helpers.scaling_transformation(original_points, scale_vector);
+transformed_points = helpers.scaling_transformation(original_points, scale_vector);
 
 % rotate
 rotation_angles = [0,pi/2,0];
-[transformed_points] = helpers.rotation_transformation(transformed_points, rotation_angles);
+transformed_points = helpers.rotation_transformation(transformed_points, rotation_angles);
+transformed_normal = helpers.rotation_transformation(original_normal, rotation_angles);
 
 % translate
 translation_vector = [1,0,0];
-[transformed_points] = helpers.translation_transformation(transformed_points, translation_vector);
+transformed_points = helpers.translation_transformation(transformed_points, translation_vector);
 
 % rotate 8 times
 rotated_disks = cell(8,1);
+rotated_normals = cell(8,1);
 angles = (0:7)/8*2*pi;
 for ii = 1:length(angles)
     rotation_angles = [0,0,angles(ii)];
     rotated_disks{ii} = helpers.rotation_transformation(transformed_points, rotation_angles);
+    rotated_normals{ii} = helpers.rotation_transformation(transformed_normal, rotation_angles);
 end
 
 % plot
@@ -31,6 +35,8 @@ hold on
 for ii = 1:length(angles)
     patch('Faces',connectivity_list,'Vertices',rotated_disks{ii},'EdgeColor','k','FaceColor','none')
     text(rotated_disks{ii}(2,1), rotated_disks{ii}(2,2), rotated_disks{ii}(2,3), sprintf('%d',ii))
+    center = rotated_disks{ii}(1,:);
+    quiver3(center(1), center(2), center(3), rotated_normals{ii}(1), rotated_normals{ii}(2), rotated_normals{ii}(3))
 end
 xlabel('x')
 ylabel('y')
