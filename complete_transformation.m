@@ -3,7 +3,6 @@ imdl = mk_common_model('a2c2',8);
 % imdl.fwd_model.elems
 original_points = [imdl.fwd_model.nodes, zeros(length(imdl.fwd_model.nodes),1)];
 connectivity_list = imdl.fwd_model.elems;
-original_normal = [0,0,1];
 
 % scale
 scale_vector = [0.25,0.25,1];
@@ -12,7 +11,6 @@ transformed_points = helpers.scaling_transformation(original_points, scale_vecto
 % rotate
 rotation_angles = [0,pi/2,0];
 transformed_points = helpers.rotation_transformation(transformed_points, rotation_angles);
-transformed_normal = helpers.rotation_transformation(original_normal, rotation_angles);
 
 % translate
 translation_vector = [1,0,0];
@@ -25,7 +23,7 @@ angles = (0:7)/8*2*pi;
 for ii = 1:length(angles)
     rotation_angles = [0,0,angles(ii)];
     rotated_disks{ii} = helpers.rotation_transformation(transformed_points, rotation_angles);
-    rotated_normals{ii} = helpers.rotation_transformation(transformed_normal, rotation_angles);
+    rotated_normals{ii} = helpers.get_normal(rotated_disks{ii});
 end
 
 % plot
