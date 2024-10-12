@@ -5,7 +5,7 @@ original_points = [imdl.fwd_model.nodes, zeros(length(imdl.fwd_model.nodes),1)];
 connectivity_list = imdl.fwd_model.elems;
 
 % scale
-scale_vector = [0.25,0.25,0];
+scale_vector = [0.25,0.25,1];
 [transformed_points] = helpers.scaling_transformation(original_points, scale_vector);
 
 % rotate
@@ -25,7 +25,7 @@ for ii = 1:length(angles)
 end
 
 % plot
-figure(3)
+figure(1)
 clf
 hold on
 for ii = 1:length(angles)
