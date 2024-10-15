@@ -11,57 +11,74 @@ phantom.elec_vert_position = 0.1;
 phantom.phantom_radius = 0.1;
 phantom.phantom_height = 2*phantom.phantom_radius;
 
-maxsz = 0.02;
-max_el_sz = maxsz;
+maxsz_list = [0.02, 0.015, 0.01];
 
-fprintf('maxsz %f\n', maxsz)
-fprintf('max_el_sz %f\n', max_el_sz)
-
-[fmdl, img_h, vh, elem_centers, elem_volumes, e_curr] = make_model_and_get_all(phantom, maxsz, max_el_sz);
-
-strct = struct('B_positions_struct', [], 'B', [], 'abs_B', []);
-B_results.vert_plane_tangential = strct;
-B_results.horz_plane_tangential = strct;
-B_results.vert_plane_sagital = strct;
-
-n_points = 25;
 
 what_2_plot.fem = true;
 what_2_plot.abs_B = true;
 what_2_plot.B = true;
 
-%% vert plane tangential to phantom
-B_positions_struct = calc_position_vertical_plane_tangential_to_phantom(n_points, phantom);
-B = helpers.calc_B_at_points(B_positions_struct.B_positions, elem_centers, e_curr, elem_volumes);
-abs_B = vecnorm(B,2,2);
+all_results = cell(length(maxsz_list),2);
 
-make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
+for ii = 1:length(maxsz_list)
 
-B_results.vert_plane_tangential.B_positions_struct = B_positions_struct;
-B_results.vert_plane_tangential.B = B;
-B_results.vert_plane_tangential.abs_B = abs_B;
+    maxsz = maxsz_list(ii);
+    max_el_sz = maxsz;
+    fprintf('maxsz %f\n', maxsz)
+    fprintf('max_el_sz %f\n', max_el_sz)
+    
+    [fmdl, img_h, vh, elem_centers, elem_volumes, e_curr] = make_model_and_get_all(phantom, maxsz, max_el_sz);
+    
+    strct = struct('B_positions_struct', [], 'B', [], 'abs_B', []);
+    B_results.vert_plane_tangential = strct;
+    B_results.horz_plane_tangential = strct;
+    B_results.vert_plane_sagital = strct;
+    
+    n_points = 25;
+    if ii ~= 1
+        what_2_plot.fem = false;
+        what_2_plot.abs_B = true;
+        what_2_plot.B = true;
+    end
+    
+    %% vert plane tangential to phantom
+    B_positions_struct = calc_position_vertical_plane_tangential_to_phantom(n_points, phantom);
+    B = helpers.calc_B_at_points(B_positions_struct.B_positions, elem_centers, e_curr, elem_volumes);
+    abs_B = vecnorm(B,2,2);
+    
+    make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
+    
+    B_results.vert_plane_tangential.B_positions_struct = B_positions_struct;
+    B_results.vert_plane_tangential.B = B;
+    B_results.vert_plane_tangential.abs_B = abs_B;
+    
+    %% horz plane tangential to phantom
+    B_positions_struct = calc_position_horz_plane_tangential_to_phantom(n_points, phantom);
+    B = helpers.calc_B_at_points(B_positions_struct.B_positions, elem_centers, e_curr, elem_volumes);
+    abs_B = vecnorm(B,2,2);
+    
+    make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
+    
+    B_results.horz_plane_tangential.B_positions_struct = B_positions_struct;
+    B_results.horz_plane_tangential.B = B;
+    B_results.horz_plane_tangential.abs_B = abs_B;
+    
+    %% vert plane sagital to phantom
+    [B_positions_struct] = calc_position_vert_plane_sagital_to_phantom(n_points, phantom);
+    B = helpers.calc_B_at_points(B_positions_struct.B_positions, elem_centers, e_curr, elem_volumes);
+    abs_B = vecnorm(B,2,2);
+    
+    make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
+    
+    B_results.vert_plane_sagital.B_positions_struct = B_positions_struct;
+    B_results.vert_plane_sagital.B = B;
+    B_results.vert_plane_sagital.abs_B = abs_B;
 
-%% horz plane tangential to phantom
-B_positions_struct = calc_position_horz_plane_tangential_to_phantom(n_points, phantom);
-B = helpers.calc_B_at_points(B_positions_struct.B_positions, elem_centers, e_curr, elem_volumes);
-abs_B = vecnorm(B,2,2);
+    %%
+    all_results{ii,1} = maxsz;
+    all_results{ii,2} = B_results;
 
-make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
-
-B_results.horz_plane_tangential.B_positions_struct = B_positions_struct;
-B_results.horz_plane_tangential.B = B;
-B_results.horz_plane_tangential.abs_B = abs_B;
-
-%% vert plane sagital to phantom
-[B_positions_struct] = calc_position_vert_plane_sagital_to_phantom(n_points, phantom);
-B = helpers.calc_B_at_points(B_positions_struct.B_positions, elem_centers, e_curr, elem_volumes);
-abs_B = vecnorm(B,2,2);
-
-make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
-
-B_results.vert_plane_sagital.B_positions_struct = B_positions_struct;
-B_results.vert_plane_sagital.B = B;
-B_results.vert_plane_sagital.abs_B = abs_B;
+end
 
 
 
@@ -161,8 +178,8 @@ B_positions_struct.surf = @(abs_B) surf(xx,zz,reshape(abs_B,size(xx)));
 B_positions_struct.contourf = @(Bi) contourf(xx, zz, reshape(Bi,size(xx)));
 end
 
-function make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
-
+function  [plots_done] = make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
+plots_done = {[],[],[]};
 if what_2_plot.fem
     figure()
     clf
@@ -170,11 +187,13 @@ if what_2_plot.fem
     show_fem(fmdl,[0,1.012])
     B_positions_struct.plot3()
     hold off
+    plots_done{1} = gcf;
 end
 
 if what_2_plot.abs_B
     figure()
     B_positions_struct.surf(abs_B)
+    plots_done{2} = gcf;
 end
 
 if what_2_plot.B
@@ -185,5 +204,6 @@ if what_2_plot.B
         B_positions_struct.contourf(B(:,ii))
         colorbar()
     end
+    plots_done{3} = gcf;
 end
 end
