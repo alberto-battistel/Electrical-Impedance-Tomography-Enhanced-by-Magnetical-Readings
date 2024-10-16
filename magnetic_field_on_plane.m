@@ -11,14 +11,16 @@ phantom.elec_vert_position = 0.1;
 phantom.phantom_radius = 0.1;
 phantom.phantom_height = 2*phantom.phantom_radius;
 
-maxsz_list = [0.02, 0.015, 0.01];
+maxsz_list = [0.02, 0.015, 0.01, 0.005, 0.0025];
 
 
-what_2_plot.fem = true;
+what_2_plot.fem = false;
 what_2_plot.abs_B = true;
-what_2_plot.B = true;
+what_2_plot.B = false;
 
 all_results = cell(length(maxsz_list),2);
+
+plots_done = cell(length(maxsz_list),3);
 
 for ii = 1:length(maxsz_list)
 
@@ -37,8 +39,8 @@ for ii = 1:length(maxsz_list)
     n_points = 25;
     if ii ~= 1
         what_2_plot.fem = false;
-        what_2_plot.abs_B = true;
-        what_2_plot.B = true;
+    %     what_2_plot.abs_B = true;
+    %     what_2_plot.B = true;
     end
     
     %% vert plane tangential to phantom
@@ -46,7 +48,7 @@ for ii = 1:length(maxsz_list)
     B = helpers.calc_B_at_points(B_positions_struct.B_positions, elem_centers, e_curr, elem_volumes);
     abs_B = vecnorm(B,2,2);
     
-    make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
+    plots_done{ii,1} = make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot);
     
     B_results.vert_plane_tangential.B_positions_struct = B_positions_struct;
     B_results.vert_plane_tangential.B = B;
@@ -57,7 +59,7 @@ for ii = 1:length(maxsz_list)
     B = helpers.calc_B_at_points(B_positions_struct.B_positions, elem_centers, e_curr, elem_volumes);
     abs_B = vecnorm(B,2,2);
     
-    make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
+    plots_done{ii,2} = make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot);
     
     B_results.horz_plane_tangential.B_positions_struct = B_positions_struct;
     B_results.horz_plane_tangential.B = B;
@@ -68,7 +70,7 @@ for ii = 1:length(maxsz_list)
     B = helpers.calc_B_at_points(B_positions_struct.B_positions, elem_centers, e_curr, elem_volumes);
     abs_B = vecnorm(B,2,2);
     
-    make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot)
+    plots_done{ii,3} = make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot);
     
     B_results.vert_plane_sagital.B_positions_struct = B_positions_struct;
     B_results.vert_plane_sagital.B = B;
@@ -81,7 +83,18 @@ for ii = 1:length(maxsz_list)
 end
 
 
+%%
+fun = @(c, str) [c.vert_plane_tangential.(str), c.horz_plane_tangential.(str), c.vert_plane_sagital.(str)];
+values = zeros(length(maxsz_list)-1, 3);
 
+% last maxsz is the reference
+for ii = 1:length(maxsz_list)-1
+    values(ii,:) = vecnorm(fun(all_results{ii,2}, 'abs_B')-fun(all_results{end,2}, 'abs_B'),2,1)./vecnorm(fun(all_results{end,2}, 'abs_B'),2,1);
+end
+
+figure()
+plot(maxsz_list(1:end-1), values)
+set(gca, 'xscale', 'log', 'yscale', 'log')
 
 
 
@@ -192,7 +205,8 @@ end
 
 if what_2_plot.abs_B
     figure()
-    B_positions_struct.surf(abs_B)
+    % B_positions_struct.surf(abs_B)
+    B_positions_struct.contourf(abs_B); colorbar();
     plots_done{2} = gcf;
 end
 
