@@ -7,11 +7,12 @@ init_eidors()
 %%
 
 phantom.n_elec = 16;
-phantom.elec_vert_position = 0.1;
-phantom.phantom_radius = 0.1;
-phantom.phantom_height = 2*phantom.phantom_radius;
+phantom.elec_radius = 0.005;
+phantom.phantom_radius = 0.08;
+phantom.phantom_height = 1.5*phantom.phantom_radius;
+phantom.elec_vert_position = phantom.phantom_height/2;
 
-maxsz_list = [0.02, 0.015, 0.01, 0.005, 0.0025];
+maxsz_list = [0.02, 0.015, 0.01, 0.0075, 0.005, 0.0025, 0.001];
 
 
 what_2_plot.fem = false;
@@ -93,7 +94,31 @@ for ii = 1:length(maxsz_list)-1
 end
 
 figure()
+hold on
 plot(maxsz_list(1:end-1), values)
+plot(maxsz_list(1:end-1), values, '.')
+set(gca, 'xscale', 'log', 'yscale', 'log')
+
+%%
+x = log10(maxsz_list(1:end-1));
+y = log10(values);
+xx = log10(logspace(-3,max(x),500));
+
+PS = cell(3,1);
+yy = zeros(length(xx),3);
+delta = zeros(length(xx),3);
+for ii = 1:3
+    [p,S] = polyfit(x,y(:,ii),3);
+    PS{ii} = {p,s};
+    [yy(:,ii),delta(:,ii)] = polyval(p,xx,S);
+end
+
+figure(50)
+clf
+hold on
+plot(maxsz_list(1:end-1), values)
+plot(maxsz_list(1:end-1), values, '.')
+% plot(10.^xx,10.^yy,'r')
 set(gca, 'xscale', 'log', 'yscale', 'log')
 
 
@@ -110,7 +135,7 @@ phantom_radius = phantom.phantom_radius;
 phantom_height = phantom.phantom_height;
 
 el_pos = [-360/n_elec/2+(0:n_elec-1).'/n_elec*360,elec_vert_position.*ones(16,1)];
-el_sz  = [0.01,0,max_el_sz].*ones(size(el_pos,1),3);
+el_sz  = [phantom.elec_radius,0,max_el_sz].*ones(size(el_pos,1),3);
 
 fmdl = ng_mk_cyl_models([phantom_height,phantom_radius,maxsz], el_pos, el_sz);
 imdl = mk_common_model('a2c2',16); % Will replace most 
