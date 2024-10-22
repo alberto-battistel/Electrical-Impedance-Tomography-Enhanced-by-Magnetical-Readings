@@ -13,7 +13,9 @@ phantom.phantom_height = 1.5*phantom.phantom_radius;
 phantom.elec_vert_position = phantom.phantom_height/2;
 
 % max_el_sz_list = [0.0025, 0.001, 0.00075, 0.0005, 0.00025, 0.00001];
-max_el_sz_list = [logspace(-3,-4,7), 0.00005];
+% max_el_sz_list = [logspace(-3,-4,10)];
+% max_el_sz_list(end+1) = max_el_sz_list(end)/2;
+max_el_sz_list = logspace(-3, -5, 11);
 maxsz = 0.01;
 
 what_2_plot.fem = false;
@@ -27,16 +29,17 @@ plots_done = cell(length(max_el_sz_list),3);
 for ii = 1:length(max_el_sz_list)
 
     max_el_sz = max_el_sz_list(ii);
-
-    datetime(now,'ConvertFrom','datenum')
-    fprintf('\n\n\n')
-
+    
+    home
     fprintf('maxsz %f\n', maxsz)
     fprintf('max_el_sz %f\n', max_el_sz)
     fprintf('\n\n\n')
 
     [fmdl, img_h, vh, elem_centers, elem_volumes, e_curr] = make_model_and_get_all(phantom, maxsz, max_el_sz);
     
+    datetime(now,'ConvertFrom','datenum')
+    fprintf('\n\n\n')
+
     strct = struct('B_positions_struct', [], 'B', [], 'abs_B', []);
     B_results.vert_plane_tangential = strct;
     B_results.horz_plane_tangential = strct;
@@ -83,41 +86,80 @@ for ii = 1:length(max_el_sz_list)
     B_results.vert_plane_sagital.abs_B = abs_B;
 
     %%
-    all_results{ii,1} = maxsz;
+    all_results{ii,1} = max_el_sz;
     all_results{ii,2} = B_results;
 
 end
-
-
 %%
-fun = @(c, str) [c.vert_plane_tangential.(str), c.horz_plane_tangential.(str), c.vert_plane_sagital.(str)];
-values = zeros(length(max_el_sz_list)-1, 3);
+save('FEM_B_convergency', 'all_results', 'phantom', 'max_el_sz_list')
 
-% last maxsz is the reference
-for ii = 1:length(max_el_sz_list)-1
-    % values(ii,:) = vecnorm(fun(all_results{ii,2}, 'abs_B')-fun(all_results{end,2}, 'abs_B'),2,1);
-    values(ii,:) = vecnorm(fun(all_results{ii,2}, 'abs_B')-fun(all_results{end,2}, 'abs_B'),2,1)./vecnorm(fun(all_results{end,2}, 'abs_B'),2,1);
+plane_str = {'vert_plane_tangential', 'horz_plane_tangential', 'vert_plane_sagital'};
+
+fun_strct = @(c,plane,what) c.(plane).(what);
+what_2_plot.fem = false;
+what_2_plot.abs_B = false;
+what_2_plot.B = true;
+
+for ii = 1:length(max_el_sz_list)
+    B_results = all_results{ii,2};
+    for str_ = plane_str
+        B_positions_struct = fun_strct(B_results, str_{1}, 'B_positions_struct');
+        B = fun_strct(B_results, str_{1}, 'B');
+        make_plots(fmdl, B_positions_struct, abs_B, B, what_2_plot);
+    end
+
 end
 
+%%
+
+plane_normals =[0,1,0; ...
+                0,0,1; ...
+                1,0,0];
+
+
+%%
+fun_strct = @(c, str) [c.vert_plane_tangential.(str), c.horz_plane_tangential.(str), c.vert_plane_sagital.(str)];
+
+values_diff = zeros(length(max_el_sz_list), 3);
+norm_values = zeros(length(max_el_sz_list), 3);
+values = zeros(length(max_el_sz_list), 3);
+
+% last maxsz is the reference
+for ii = 1:length(max_el_sz_list)
+    values_diff(ii,:) = vecnorm(fun_strct(all_results{ii,2}, 'abs_B')-fun_strct(all_results{end,2}, 'abs_B'),2,1);
+    norm_values(ii,:) = vecnorm(fun_strct(all_results{ii,2}, 'abs_B')-fun_strct(all_results{end,2}, 'abs_B'),2,1)./vecnorm(fun_strct(all_results{end,2}, 'abs_B'),2,1);
+    values(ii,:) = vecnorm(fun_strct(all_results{ii,2}, 'abs_B'),2,1);
+end
+
+% for ii = 1:length(max_el_sz_list)
+%     all_B = fun_strct(all_results{ii,2}, 'B');
+%     fluxes(ii,:) = sum([all_B(:,1:3)*plane_normals(1,:)', ...
+%                         all_B(:,4:6)*plane_normals(2,:)', ...
+%                         all_B(:,7:9)*plane_normals(3,:)'],1);
+% end
+
 figure(50)
+clf
 hold on
-plot(max_el_sz_list(1:end-1), values)
-plot(max_el_sz_list(1:end-1), values, '.')
+plot(max_el_sz_list, values)
+plot(max_el_sz_list, values, '.')
 set(gca, 'xscale', 'log', 'yscale', 'log')
+xlabel('max electrode size / m')
+ylabel('Norm. values / T')
 
 %%
 
-x = log10(max_el_sz_list(1:end-1));
-y = log10(mean(values,2));
-xx = log10(logspace(-4,max(x),500));
+x = log10(max_el_sz_list);
+y = log10(mean(values_diff,2));
+xx = log10(logspace(-5,max(x),500));
 p = polyfit(x,y,1);
 yy = polyval(p,xx);
 
 figure(100)
 clf
 hold on
-plot(max_el_sz_list(1:end-1), values, 'DisplayName', 'B_1')
-plot(max_el_sz_list(1:end-1), values, 's')
+plot(max_el_sz_list, values_diff, 'DisplayName', 'B_1')
+plot(max_el_sz_list, values_diff, 's')
 plot(10.^xx,10.^yy,'r','DisplayName','fit')
 set(gca, 'xscale', 'log', 'yscale', 'log')
 
