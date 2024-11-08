@@ -115,22 +115,36 @@ classdef Coil < matlab.mixin.Copyable
     end
         
     methods
-        function B_values = calc_B_on_mesh(obj, model)
+        function B_values = calc_B_on_mesh(obj, model, measurement_idx)
             elem_centers = model.elem_centers;
-            e_curr = model.e_curr;
+            elem_curr = model.elem_curr;
             elem_volumes = model.elem_volumes;
-            B_values = helpers.calc_B_at_points(obj.points, elem_centers, e_curr, elem_volumes);
+            
+            B_values = zeros(length(obj.points), 3, length(measurement_idx));
+            for ii = measurement_idx 
+                B_values(:,:,ii) = helpers.calc_B_at_points(obj.points, elem_centers, elem_curr(:,:,ii), elem_volumes);
+            end
             obj.B_values = B_values;
         end
 
         function values = take_B_dot_norm(obj)
-            values = dot(obj.B_values, repmat(obj.normal, length(obj.B_values), 1), 2); 
+            n_measurents = size(obj.B_values,3);
+            n_values = size(obj.B_values,1);
+            values = zeros(n_values, size(obj.B_values,3));
+            for ii = 1:n_measurents
+                values(:,ii) = dot(obj.B_values(:,:,ii), repmat(obj.normal, n_values, 1), 2); 
+            end
             obj.values = values;
         end
 
         function final_integral = integrate_on_coil(obj)
-
-            final_integral = helpers.integral_on_mesh(obj);
+            n_measurents = size(obj.B_values,3);
+            final_integral = zeros(n_measurents,1);
+            model = struct('connectivity_list', obj.connectivity_list, 'areas', obj.areas, 'values', []);
+            for ii = 1:n_measurents
+                model.values = obj.values(:,ii);
+                final_integral(ii) = helpers.integral_on_mesh(model);
+            end
         end
     end
         
