@@ -1,4 +1,4 @@
-classdef Coil
+classdef Coil < matlab.mixin.Copyable
     %UNTITLED3 Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -7,7 +7,8 @@ classdef Coil
         orientation
         points
         connectivity_list
-
+        values = []
+        areas
     end
 
     properties (Dependent)
@@ -39,6 +40,7 @@ classdef Coil
             % scale to adjust the radius
             scale_vector = obj.radius*[1,1,1];
             obj = obj.scaling_transformation(scale_vector);
+            obj.areas = helpers.calc_area(obj.points(:,1:2), obj.connectivity_list);
             % transformed_points = helpers.scaling_transformation(original_points, scale_vector);
 
             % rotate for the orientation
@@ -104,9 +106,26 @@ classdef Coil
             for ii = 1:length(angles)
                 rotation_angles = [0,0,angles(ii)];
                 % obj.rotation_transformation(rotation_angles);
-                new_objs{ii} = obj.rotation_transformation(rotation_angles);
+                new_obj = Coil(obj.center, obj.radius, obj.orientation);
+                new_objs{ii} = new_obj.rotation_transformation(rotation_angles);
             end
         end
-
     end
+        
+    methods
+        function values = calc_B_on_mesh(obj, model)
+            elem_centers = model.elem_centers;
+            e_curr = model.e_curr;
+            elem_volumes = model.elem_volumes;
+            values = helpers.calc_B_at_points(obj.points, elem_centers, e_curr, elem_volumes);
+            obj.values = values;
+        end
+
+        function final_integral = integrate_on_coil(obj)
+            final_integral = helpers.integral_on_mesh(obj);
+        end
+    end
+        
+
+
 end
