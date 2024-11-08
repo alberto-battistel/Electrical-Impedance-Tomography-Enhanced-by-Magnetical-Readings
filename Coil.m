@@ -8,6 +8,7 @@ classdef Coil < matlab.mixin.Copyable
         points
         connectivity_list
         values = []
+        B_values = []
         areas
     end
 
@@ -68,9 +69,10 @@ classdef Coil < matlab.mixin.Copyable
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here
             hold on
-            patch('Faces',obj.connectivity_list,'Vertices',obj.points,'EdgeColor','k','FaceColor','none')
+            patch('Faces',obj.connectivity_list,'Vertices',obj.points,'EdgeColor','k','FaceColor','blue')
             
-            quiver3(obj.center(1), obj.center(2), obj.center(3), obj.normal(1), obj.normal(2), obj.normal(3))
+            scaled_normal = obj.normal*obj.radius/4;
+            quiver3(obj.center(1), obj.center(2), obj.center(3), scaled_normal(1), scaled_normal(2), scaled_normal(3))
             hold off
             xlabel('x')
             ylabel('y')
@@ -113,15 +115,21 @@ classdef Coil < matlab.mixin.Copyable
     end
         
     methods
-        function values = calc_B_on_mesh(obj, model)
+        function B_values = calc_B_on_mesh(obj, model)
             elem_centers = model.elem_centers;
             e_curr = model.e_curr;
             elem_volumes = model.elem_volumes;
-            values = helpers.calc_B_at_points(obj.points, elem_centers, e_curr, elem_volumes);
+            B_values = helpers.calc_B_at_points(obj.points, elem_centers, e_curr, elem_volumes);
+            obj.B_values = B_values;
+        end
+
+        function values = take_B_dot_norm(obj)
+            values = dot(obj.B_values, repmat(obj.normal, length(obj.B_values), 1), 2); 
             obj.values = values;
         end
 
         function final_integral = integrate_on_coil(obj)
+
             final_integral = helpers.integral_on_mesh(obj);
         end
     end

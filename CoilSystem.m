@@ -21,9 +21,11 @@ classdef CoilSystem
         function integral_values = calc_coil_integrals(obj, model)
             integral_values = zeros(length(obj.coils),1);
             for ii = 1:length(obj.coils)
-                obj.coils{ii}.calc_B_on_mesh(obj, model);
+                obj.coils{ii}.calc_B_on_mesh(model);
+                obj.coils{ii}.take_B_dot_norm();
                 integral_values(ii) = obj.coils{ii}.integrate_on_coil();
             end
+            obj.integral_values = integral_values;
         end
     end
 
