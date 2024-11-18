@@ -29,7 +29,7 @@ current_model.elem_curr = eit.elem_curr(:,:,1);
 
 %% horizontal tangential coils
 coil_info.center = [phantom.radius + 0.01, 0, phantom.elec_vert_position];
-coil_info.radius = 0.02;
+coil_info.radius = 0.005;
 coil_info.orientation = [0,pi/2, 0];
 
 integral_values(:,1) = calc_coils_flux(coil_info, current_model);
@@ -50,8 +50,8 @@ integral_values(:,3) = freq*calc_coils_flux(coil_info, current_model);
 
 %%
 figure
-coil_index = [5:-1:1,16:-1:6];
-plot(1:16, integral_values(coil_index,:))
+coil_index = 1:16;
+plot(coil_index, integral_values)
 xlabel('coil index')
 ylabel('coil voltage / V')
 legend('tangential coils', 'perpendicolar coils', 'coplanar coils')

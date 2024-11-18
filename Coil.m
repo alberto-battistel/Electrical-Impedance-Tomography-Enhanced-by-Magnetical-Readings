@@ -106,8 +106,7 @@ classdef Coil < matlab.mixin.Copyable
 
             new_objs = cell(number_of_coils,1);
             for ii = 1:length(angles)
-                rotation_angles = [0,0,angles(ii)];
-                % obj.rotation_transformation(rotation_angles);
+                rotation_angles = [0,0,pi/2-angles(ii)]; % now it rotates like the electrodes
                 new_obj = Coil(obj.center, obj.radius, obj.orientation);
                 new_objs{ii} = new_obj.rotation_transformation(rotation_angles);
             end
