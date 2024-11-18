@@ -35,6 +35,10 @@ classdef CoilSystem
             figure()
             for ii = 1:length(obj.coils)
                 obj.coils{ii}.show();
+                text(obj.coils{ii}.center(1), ...
+                    obj.coils{ii}.center(2), ...
+                    obj.coils{ii}.center(1), ...
+                    sprintf('%d',ii))
             end
             axis equal
         end
