@@ -1,7 +1,7 @@
 home
 clear
-close all
-init_eidors()
+% close all
+% init_eidors()
 
 addpath('..')
 %%
@@ -13,6 +13,8 @@ phantom.elec_vert_position = phantom.height/2;
 phantom.max_el_sz = 0.005;
 phantom.maxsz = 0.01;
 phantom.background = 0.503;
+phantom.extra = {'ball','solid ball = sphere(0.0,0.05,0.055;0.025);'};
+phantom.ball = phantom.background/10000;
 
 current_ampl = 10e-3;
 freq = 10e6;
