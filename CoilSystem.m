@@ -1,4 +1,4 @@
-classdef CoilSystem
+classdef CoilSystem < handle
     %UNTITLED7 Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -18,13 +18,15 @@ classdef CoilSystem
             obj.coils = new_objs;
         end
 
-        function integral_values = calc_coil_integrals(obj, model, idx)
-            integral_values = zeros(length(obj.coils),1);
+        function integral_values = calc_coil_integrals(obj, model, measurement_idx)
+            integral_values = zeros(length(obj.coils),length(measurement_idx));
+
             for ii = 1:length(obj.coils)
-                obj.coils{ii}.calc_B_on_mesh(model,idx);
+                obj.coils{ii}.calc_B_on_mesh(model,measurement_idx);
                 obj.coils{ii}.take_B_dot_norm();
-                integral_values(ii) = obj.coils{ii}.integrate_on_coil();
+                integral_values(ii,:) = obj.coils{ii}.integrate_on_coil();
             end
+
             obj.integral_values = integral_values;
         end
     end
