@@ -56,9 +56,8 @@ integral_values(:,:,3) = calc_coils_flux(coil_info, current_model);
 
 %%
 
-magnetic_voltages = freq*reshape(integral_values, [], 3);
+magnetic_voltages = 2*pi*freq*reshape(integral_values, [], 3);
 figure
-coil_index = 1:16;
 hold on
 for ii = 1:3
     plot(magnetic_voltages(:,ii))
