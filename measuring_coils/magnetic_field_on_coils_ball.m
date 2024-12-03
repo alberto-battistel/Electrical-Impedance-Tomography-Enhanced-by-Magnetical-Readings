@@ -12,12 +12,12 @@ phantom.height = 1.5*phantom.radius;
 phantom.elec_vert_position = phantom.height/2;
 phantom.max_el_sz = 0.005;
 phantom.maxsz = 0.01;
-phantom.background = 0.503;
+phantom.background = 0.503; % muscle at 1 MHz
 phantom.extra = {'ball','solid ball = sphere(0.0,0.05,0.055;0.025);'};
-phantom.ball = phantom.background/10000;
+phantom.ball = 0.136; % inflated lung at 1 MHz
 
 current_ampl = 10e-3;
-freq = 10e6;
+freq = 1e6;
 eit = EIT(phantom, current_ampl);
 
 eit.show_fem()
