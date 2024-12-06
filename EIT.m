@@ -25,11 +25,13 @@ classdef EIT < handle
             el_pos = [-360/phantom.n_elec/2+(0:phantom.n_elec-1).'/phantom.n_elec*360,phantom.elec_vert_position.*ones(phantom.n_elec,1)];
             el_sz  = [phantom.elec_radius, 0, phantom.max_el_sz].*ones(size(el_pos,1),3);
             
-            if ~isfield(phantom, 'extra')
-                phantom.extra = {};
+            if isfield(phantom, 'extra')
+                fwd_model = ng_mk_cyl_models([phantom.height, phantom.radius, phantom.maxsz], el_pos, el_sz, phantom.extra);
+            else
+                fwd_model = ng_mk_cyl_models([phantom.height, phantom.radius, phantom.maxsz], el_pos, el_sz);
             end
 
-            fwd_model = ng_mk_cyl_models([phantom.height, phantom.radius, phantom.maxsz], el_pos, el_sz, phantom.extra);
+            
             if length(fwd_model.mat_idx) > 1
                 obj.with_extras = true;
             end
