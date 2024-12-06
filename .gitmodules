@@ -1,3 +1,6 @@
 [submodule "/home/alberto/Dropbox/HFU/Articles_conferences/Conferences/2024/BMT2024/BMT2024_multifreq_EIT_reconstruction/frequency_correlated_reconstruction/"]
 	path = /home/alberto/Dropbox/HFU/Articles_conferences/Conferences/2024/BMT2024/BMT2024_multifreq_EIT_reconstruction/frequency_correlated_reconstruction/
 	url = https://github.com/alberto-battistel/frequency-correlated-EIT-reconstruction.git
+[submodule "test"]
+	path = test
+	url = https://github.com/alberto-battistel/frequency-correlated-EIT-reconstruction.git
