@@ -11,6 +11,7 @@ classdef EIT < handle
         elem_curr
         volt_strct
         with_extras
+        n_elec
     end
 
     properties (Dependent)
@@ -21,8 +22,8 @@ classdef EIT < handle
         function obj = EIT(phantom, current_ampl)
 
             obj.phantom = phantom;
-
-            el_pos = [-360/phantom.n_elec/2+(0:phantom.n_elec-1).'/phantom.n_elec*360,phantom.elec_vert_position.*ones(phantom.n_elec,1)];
+            obj.n_elec = phantom.n_elec;
+            el_pos = [-360/obj.n_elec/2+(0:obj.n_elec-1).'/obj.n_elec*360,phantom.elec_vert_position.*ones(obj.n_elec,1)];
             el_sz  = [phantom.elec_radius, 0, phantom.max_el_sz].*ones(size(el_pos,1),3);
             
             if isfield(phantom, 'extra')
