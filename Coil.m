@@ -69,7 +69,7 @@ classdef Coil < matlab.mixin.Copyable
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here
             hold on
-            patch('Faces',obj.connectivity_list,'Vertices',obj.points,'EdgeColor','k','FaceColor','blue')
+            patch('Faces',obj.connectivity_list,'Vertices',obj.points,'EdgeColor','k','FaceColor','magenta')
             
             scaled_normal = obj.normal*obj.radius/4;
             quiver3(obj.center(1), obj.center(2), obj.center(3), scaled_normal(1), scaled_normal(2), scaled_normal(3))
@@ -116,7 +116,12 @@ classdef Coil < matlab.mixin.Copyable
     methods
         function B_values = calc_B_on_mesh(obj, model, measurement_idx)
             elem_centers = model.elem_centers;
-            elem_curr = model.elem_curr;
+            if isprop(model, 'elem_curr')
+                elem_curr = model.elem_curr;
+            elseif isprop(model, 'elem_currents')
+                elem_curr = model.elem_currents;
+            end
+
             elem_volumes = model.elem_volumes;
             
             B_values = zeros(length(obj.points), 3, length(measurement_idx));

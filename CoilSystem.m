@@ -34,7 +34,7 @@ classdef CoilSystem < matlab.mixin.Copyable
 
     methods
         function show(obj)
-            figure()
+            % figure()
             for ii = 1:length(obj.coils)
                 obj.coils{ii}.show();
                 text(obj.coils{ii}.center(1), ...
