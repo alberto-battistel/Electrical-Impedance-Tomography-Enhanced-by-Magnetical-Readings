@@ -1,4 +1,4 @@
-classdef InverseProblemEIT< matlab.mixin.Copyable
+classdef (Abstract) InverseProblemEIT< matlab.mixin.Copyable
     %UNTITLED2 Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -6,10 +6,11 @@ classdef InverseProblemEIT< matlab.mixin.Copyable
         EIT
         elem_centers
         elem_volumes
-        zern_coeffs
-        cheb_coeffs
-        zern_set
-        cheb_set
+        coeffs
+        % zern_coeffs
+        % cheb_coeffs
+        % zern_set
+        % cheb_set
         cond_values
         coeff_matrix
         n_coeffs
@@ -31,7 +32,7 @@ classdef InverseProblemEIT< matlab.mixin.Copyable
 
     methods
         function obj = InverseProblemEIT(phantom, current_ampl, ...
-                zern_coeffs, cheb_coeffs)
+                coeffs)
             %UNTITLED2 Construct an instance of this class
             %   Detailed explanation goes here
             
@@ -54,45 +55,19 @@ classdef InverseProblemEIT< matlab.mixin.Copyable
 
             obj.scaled_elem_centers = helpers.cylindrical_elem_centers(obj.elem_centers);
             
-            obj.zern_coeffs = zern_coeffs;
-            obj.cheb_coeffs = cheb_coeffs;
+            obj.n_coeffs = obj.assign_coeffs(coeffs);
         end
+    end
+        
+    methods (Abstract)
+        n_coeffs = assign_coeffs(obj, coeffs)
+        make_basis(obj)
+        calc_cond_values(obj, pert_amplitude)
+    end
 
-        function make_zern_set(obj)
-            obj.zern_set = helpers.zernike.zernfun( ...
-                obj.zern_coeffs(:,1), ...
-                obj.zern_coeffs(:,2), ...
-                obj.scaled_elem_centers(:,1), ...
-                obj.scaled_elem_centers(:,2), ...
-                'norm');
-        end
-
-        function make_cheb_set(obj)
-            obj.cheb_set = cos(acos(obj.scaled_elem_centers(:,3)).*obj.cheb_coeffs);
-        end
-
-        function calc_cond_values(obj, pert_amplitude)
-            obj.pert_amplitude = pert_amplitude;
-            n_cheb = size(obj.cheb_set,2);
-            n_zern = size(obj.zern_set,2);
-
-            obj.n_coeffs = n_zern*n_cheb;
-            
-            obj.cond_values = zeros(length(obj.elem_centers), obj.n_coeffs);
-            obj.coeff_matrix = zeros(3, obj.n_coeffs);
-            for i_cheb = 1:n_cheb
-                for i_zern = 1:n_zern
-                    idx = (i_cheb-1)*n_zern + i_zern;
-                    obj.coeff_matrix(:,idx) = [obj.zern_coeffs(i_zern,:), obj.cheb_coeffs(i_cheb)];
-                    obj.cond_values(:,idx) = obj.img_0.elem_data + ...
-                        obj.pert_amplitude*obj.cheb_set(:,i_cheb).*obj.zern_set(:,i_zern);
-                end
-            end
-        end
-
-        function assign_values(obj, zern_coeff_pair, cheb_coeff)
-
-            coeff_to_see = [zern_coeff_pair'; cheb_coeff];
+    methods
+        function assign_values(obj, coeff_to_see)
+            coeff_to_see = coeff_to_see(:);
 
             idx = find(ismember(obj.coeff_matrix', coeff_to_see', 'row'));
 
@@ -184,11 +159,6 @@ classdef InverseProblemEIT< matlab.mixin.Copyable
             d_unnormalized_voltages = obj.unnormalized_coil_voltages-obj.unnormalized_coil_voltages_0;
             jacobian = d_unnormalized_voltages/obj.pert_amplitude;
 
-
         end
-
-
-
-
     end
 end
