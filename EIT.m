@@ -1,4 +1,4 @@
-classdef EIT < handle
+classdef EIT < matlab.mixin.Copyable
     %UNTITLED Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -8,7 +8,8 @@ classdef EIT < handle
         img
         elem_centers
         elem_volumes
-        elem_curr
+        elem_currents
+        elem_currents_idx
         volt_strct
         with_extras
         n_elec
@@ -45,7 +46,7 @@ classdef EIT < handle
 
             obj.mk_image(phantom);
             
-            obj.volt_strct = fwd_solve(obj.img);
+            obj.fwd_solve()
             
             obj.elem_centers = interp_mesh(obj.fwd_model, 0); % center of elements
             obj.elem_volumes = helpers.calc_element_volume(obj.fwd_model.elems, obj.fwd_model.nodes);
@@ -75,21 +76,36 @@ classdef EIT < handle
             obj.imdl.normalize_measurements = 0;
         end
 
-        function calc_elem_current(obj)
-            n_measurements = size(obj.volt_strct.volt,2);
-            obj.elem_curr = zeros(length(obj.fwd_model.elems), 3, n_measurements);
-            for ii = 1:n_measurements
-                obj.elem_curr(:,:,ii) = calc_elem_current(obj.img, obj.volt_strct.volt(:,ii));
+        function fwd_solve(obj)
+            obj.volt_strct = fwd_solve(obj.img);
+        end
+
+        function calc_elem_current(obj, measurements_idx)
+            obj.check_idx_in_measurements(measurements_idx)
+            obj.elem_currents_idx = measurements_idx;
+            obj.elem_currents = zeros(length(obj.fwd_model.elems), 3, length(measurements_idx));
+            for ii = 1:length(measurements_idx)
+                idx = measurements_idx(ii);
+                obj.elem_currents(:,:,ii) = calc_elem_current(obj.img, obj.volt_strct.volt(:,idx));
             end
         end
 
+        function check_idx_in_measurements(obj, measurements_idx)
+            n_measurements = size(obj.volt_strct.volt,2);
+            possible_idx = 1:n_measurements;
+            if ~ all(ismember(measurements_idx, possible_idx))
+                error('Wrong indexes for the measurements')
+            end
+
+        end
+
         function show_current(obj, stim_value)
-            figure()
+            % figure()
             show_current(obj.img,obj.volt_strct.volt(:,stim_value));
         end
 
         function show_fem(obj)
-            figure()
+            % figure()
             show_fem(obj.img, [0,1.012])
         end
     end
