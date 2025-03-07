@@ -12,6 +12,7 @@ classdef InverseProblemEIT< matlab.mixin.Copyable
         cheb_set
         cond_values
         coeff_matrix
+        n_coeffs
         img
         img_0
         elem_currents_0
@@ -74,9 +75,11 @@ classdef InverseProblemEIT< matlab.mixin.Copyable
             obj.pert_amplitude = pert_amplitude;
             n_cheb = size(obj.cheb_set,2);
             n_zern = size(obj.zern_set,2);
+
+            obj.n_coeffs = n_zern*n_cheb;
             
-            obj.cond_values = zeros(length(obj.elem_centers), n_zern*n_cheb);
-            obj.coeff_matrix = zeros(3, n_zern*n_cheb);
+            obj.cond_values = zeros(length(obj.elem_centers), obj.n_coeffs);
+            obj.coeff_matrix = zeros(3, obj.n_coeffs);
             for i_cheb = 1:n_cheb
                 for i_zern = 1:n_zern
                     idx = (i_cheb-1)*n_zern + i_zern;
@@ -97,13 +100,13 @@ classdef InverseProblemEIT< matlab.mixin.Copyable
                 error('Wrong coefficients')
             end
 
-            obj.assign_values_from_idx(idx)
+            obj.assign_cond_values_from_idx(idx)
         end
 
-        function assign_values_from_idx(obj, idx)
-            if idx ~= 0
-                obj.img.elem_data = obj.cond_values(:,idx);
-                obj.EIT.img.elem_data = obj.cond_values(:,idx);
+        function assign_cond_values_from_idx(obj, cond_idx)
+            if cond_idx ~= 0
+                obj.img.elem_data = obj.cond_values(:,cond_idx);
+                obj.EIT.img.elem_data = obj.cond_values(:,cond_idx);
             else
                 obj.img.elem_data = obj.img_0.elem_data;
                 obj.EIT.img.elem_data = obj.img_0.elem_data;
@@ -112,16 +115,16 @@ classdef InverseProblemEIT< matlab.mixin.Copyable
 
         function calc_all_currents(obj)
             obj.elem_currents = zeros(length(obj.elem_centers), 3, obj.phantom.n_elec, size(obj.cond_values,2));
-            
+            measurements_idx = 1:size(obj.EIT.volt_strct.volt,2); % 1:obj.phantom.n_elec
             disp('Calculating currents for each perturbation...')
             f = waitbar(0,'Calculating currents for each perturbation...');
             tic;
             for ii = 0:size(obj.cond_values,2)
                 if ii == 0
-                    obj.elem_currents_0 = obj.calc_elem_current(ii);
+                    obj.elem_currents_0 = obj.calc_elem_current(ii,measurements_idx);
                     continue
                 end
-                obj.elem_currents(:,:,:,ii) = obj.calc_elem_current(ii);
+                obj.elem_currents(:,:,:,ii) = obj.calc_elem_current(ii,measurements_idx);
                 waitbar(ii/size(obj.cond_values,2),f);        
             end
             close(f)
@@ -129,10 +132,10 @@ classdef InverseProblemEIT< matlab.mixin.Copyable
             fprintf('It took %s\n', t)
         end
 
-        function elem_curr = calc_elem_current(obj, idx)
-            assign_values_from_idx(obj, idx)
-            obj.EIT.calc_elem_current()
-            elem_curr = obj.EIT.elem_curr;
+        function elem_currents = calc_elem_current(obj, cond_idx, measurements_idx)
+            assign_cond_values_from_idx(obj, cond_idx)
+            obj.EIT.calc_elem_current(measurements_idx)
+            elem_currents = obj.EIT.elem_currents;
         end
 
         function attach_coil_system(obj, coil_system)

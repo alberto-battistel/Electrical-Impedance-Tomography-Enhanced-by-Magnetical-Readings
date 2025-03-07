@@ -80,7 +80,11 @@ classdef EIT < matlab.mixin.Copyable
             obj.volt_strct = fwd_solve(obj.img);
         end
 
-        function calc_elem_current(obj, measurements_idx)
+        function calc_elem_current(obj, measurements_idx) 
+            arguments
+                obj
+                measurements_idx = 1:obj.n_elec
+            end
             obj.check_idx_in_measurements(measurements_idx)
             obj.elem_currents_idx = measurements_idx;
             obj.elem_currents = zeros(length(obj.fwd_model.elems), 3, length(measurements_idx));
