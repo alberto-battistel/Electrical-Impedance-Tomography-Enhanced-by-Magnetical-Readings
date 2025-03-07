@@ -1,7 +1,12 @@
-function cyl_elem_centers = cylindrical_elem_centers(elem_centers)
+function cyl_elem_centers = cylindrical_elem_centers(elem_centers, flag)
 %cyl_elem_centers = cylindrical_elem_centers(elem_centers) gives the
 %   cyl_elem_centers in cylindrical coordinates (r, angle, height). 
 %   It works for 2 and 3D
+
+arguments
+    elem_centers 
+    flag = 'normal'
+end
 
 n_dimensions = size(elem_centers, 2);
 
@@ -27,4 +32,9 @@ elseif n_dimensions == 3
     cyl_elem_centers = [radius_coords, angle_coords, new_elem_centers(:,3)];
 end
 
+if ~strcmp(flag, 'normal')
+    l = cyl_elem_centers(:,2) < 0;
+    cyl_elem_centers(l,1) = -cyl_elem_centers(l,1);
+    cyl_elem_centers(l,2) = -cyl_elem_centers(l,2);
+end
 end
