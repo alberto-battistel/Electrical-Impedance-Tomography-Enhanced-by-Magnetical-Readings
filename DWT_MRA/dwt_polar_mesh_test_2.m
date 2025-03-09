@@ -25,8 +25,8 @@ wname = 'haar';
 n = 8;
 A = zeros(1,n);
 D = zeros(1,n);
-Avec = zeros(2*n,2*n);
-Dvec = zeros(2*n,2*n);
+Avec = zeros(n,2*n);
+Dvec = zeros(n,2*n);
 
 figure(1)
 tiledlayout
@@ -124,12 +124,14 @@ basis_x = [vAx,vDx];
 basis_y = [vAy,vDy];
 
 basis = zeros(length(elem_centers),n*n);
+coeffs_matrix = zeros(n*n,2);
 
 idx = 0;
 for ix = 1:2*n
     for iy = 1:2*n
         idx = idx+1;
         basis(:,idx) = basis_x(:,ix).*basis_y(:,iy);
+        coeffs_matrix(idx,:) = [ix, iy];
     end
 end
 
@@ -153,7 +155,20 @@ tiledlayout()
 id = 'MATLAB:handle_graphics:Layout:NoPositionSetInTiledChartLayout';
 warning('off',id)
 
-for ii = [1,5,25,50,72,125,181,233]
+for ii = [1:32]
+    img.elem_data = basis(:,ii);
+    nexttile
+    show_fem(img, [1])
+end
+warning('on',id)
+
+figure(6)
+clf
+tiledlayout()
+id = 'MATLAB:handle_graphics:Layout:NoPositionSetInTiledChartLayout';
+warning('off',id)
+
+for ii = [1:16:256]
     img.elem_data = basis(:,ii);
     nexttile
     show_fem(img, [1])

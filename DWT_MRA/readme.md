@@ -92,12 +92,13 @@ Similar to `dwt_polar_mesh_test.m` but different mapping
 - Interpolates a fictional distribution with the wavelets using different approaches.
 - **Only lasso works well**
 - **Basis size:** 256, ~(2n * 2n)
-- Problems with mapping?
+- sure problems with mapping
 
 ### Approaches
 
 #### Least Squares
-- \( L_2 = 53.188395 \) with \( n = 8 \)
+numerically unstable
+- \( L_2 = 5.087603 \) with \( n = 8 \)
 
 #### Inner Product
 - \( L_2 = 35.120789 \) with \( n = 8 \)

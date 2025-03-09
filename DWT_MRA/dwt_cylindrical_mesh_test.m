@@ -13,7 +13,7 @@ elec_shape=[0,0.1,0.2];
 elec_obj = {'bottom'};
 fmdl = ng_mk_gen_models(shape_str, elec_pos, elec_shape, elec_obj);
 
-figure(1)
+figure(1567)
 show_fem(fmdl)
 
 img = mk_image(fmdl,0);
@@ -53,7 +53,7 @@ for in = 1:length(n)
     nn = n(in);
     A = zeros(1,nn);
     D = zeros(1,nn);
-    Avec_ = zeros(2*nn,2*nn);
+    Avec_ = zeros(nn,2*nn);
     nexttile
     hold on
     for ii = 1:nn
@@ -72,7 +72,7 @@ for in = 1:length(n)
     nn = n(in);
     A = zeros(1,nn);
     D = zeros(1,nn);
-    Dvec_ = zeros(2*nn,2*nn);
+    Dvec_ = zeros(nn,2*nn);
     nexttile
     hold on
     for ii = 1:nn

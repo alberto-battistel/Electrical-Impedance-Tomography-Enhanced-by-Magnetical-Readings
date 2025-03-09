@@ -25,8 +25,8 @@ wname = 'haar';
 n = 8;
 A = zeros(1,n);
 D = zeros(1,n);
-Avec = zeros(2*n,2*n);
-Dvec = zeros(2*n,2*n);
+Avec = zeros(n,2*n);
+Dvec = zeros(n,2*n);
 
 figure(1)
 tiledlayout
