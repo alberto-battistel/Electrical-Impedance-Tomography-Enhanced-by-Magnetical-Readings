@@ -3,8 +3,8 @@ classdef DiscreteWaveletBasis < matlab.mixin.Copyable
     %   Detailed explanation goes here
 
     properties
-        coeffs_matrix
-        basis
+        coeff_matrix
+        % basis
         % basis_vecs
         % elem_centers
         max_orders
@@ -15,36 +15,47 @@ classdef DiscreteWaveletBasis < matlab.mixin.Copyable
     end
 
     methods
-        function obj = DiscreteWaveletBasis(max_orders, elem_centers)
+        function obj = DiscreteWaveletBasis(max_orders)
             obj.wname = 'haar';
             % n = [8,8,8];
             obj.max_orders = max_orders;
-            obj.n_elems = size(elem_centers,1);
             
-            % names = {'r', 'theta', 'z'};
-            on_vec{1} = linspace(0,1,2*max_orders(1));
-            on_vec{2} = linspace(-pi,pi,2*max_orders(2));
-            on_vec{3} = linspace(-1,1,2*max_orders(3));
-            
-            obj.Avecs = cell(length(max_orders),1);
-            obj.Dvecs = cell(length(max_orders),1);
-            basis_vecs = cell(length(max_orders),1);
-            for in = 1:length(max_orders)
-                nn = max_orders(in);
+            % provisory
+            obj.coeff_matrix = obj.calc_DWT_coeffs(max_orders);
+        end
+
+        function calc_approx_detail_basis(obj)
+            obj.Avecs = cell(length(obj.max_orders),1);
+            obj.Dvecs = cell(length(obj.max_orders),1);
+            for in = 1:length(obj.max_orders)
+                nn = obj.max_orders(in);
                 obj.Avecs{in} = obj.calc_approx_vec(nn);
                 obj.Dvecs{in}  = obj.calc_detailed_vec(nn);
-            
+            end
+        end
+
+        function [basis, coeffs_matrix] =  make_basis(obj, elem_centers)
+            obj.n_elems = size(elem_centers,1);
+            % names = {'r', 'theta', 'z'};
+            on_vec{1} = linspace(0,1,2*obj.max_orders(1));
+            on_vec{2} = linspace(-pi,pi,2*obj.max_orders(2));
+            on_vec{3} = linspace(-1,1,2*obj.max_orders(3));
+            basis_vecs = cell(length(obj.max_orders),1);
+
+            for in = 1:length(obj.max_orders)
                 basis_vecs{in} = obj.interp_on_elem_centers_vec( ...
                     elem_centers(:,in), ...
                     on_vec{in}, obj.Avecs{in}, obj.Dvecs{in});
             end
-
-            coeffs_matrix_ = calc_DWT_coeffs(max_orders);
+            
             basis = obj.combine_basis(basis_vecs);
-            [obj.basis, nonzeros_idx] = obj.remove_zeros_basis(basis);
-            obj.coeffs_matrix = coeffs_matrix_(nonzeros_idx,:);
-
+            [basis, nonzeros_idx] = obj.remove_zeros_basis(basis);
+            % update coeffs_matrix
+            coeffs_matrix = obj.coeff_matrix(nonzeros_idx,:);
+            obj.coeff_matrix = coeffs_matrix;
         end
+
+
 
         function basis_vec = interp_on_elem_centers_vec(obj, elem_centers_vec, on_vec, Avec, Dvec)
 
@@ -59,7 +70,7 @@ classdef DiscreteWaveletBasis < matlab.mixin.Copyable
             method = 'linear';
             interpolation_fun = @(x,v,xq) interp1(x, v, xq, method);
             
-            n = length(Avec);
+            n = size(Avec,1);
             % x
             vA = zeros(obj.n_elems,n);
             vD = zeros(obj.n_elems,n);
@@ -88,7 +99,7 @@ classdef DiscreteWaveletBasis < matlab.mixin.Copyable
         function Avec = calc_approx_vec(obj, nn)
             A = zeros(1,nn);
             D = zeros(1,nn);
-            Avec = zeros(2*nn,2*nn);
+            Avec = zeros(nn,2*nn);
         
             for ii = 1:nn
                 a = A;
@@ -97,13 +108,12 @@ classdef DiscreteWaveletBasis < matlab.mixin.Copyable
                 Avec(ii,:) = idwt(a,d,obj.wname);
         
             end
-        
         end
 
         function Dvec = calc_detailed_vec(obj, nn)    
             A = zeros(1,nn);
             D = zeros(1,nn);
-            Dvec = zeros(2*nn,2*nn);
+            Dvec = zeros(nn,2*nn);
         
             for ii = 1:nn
                 a = A;
