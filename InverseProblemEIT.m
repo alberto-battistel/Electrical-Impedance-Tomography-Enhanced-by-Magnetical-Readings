@@ -13,11 +13,12 @@ classdef (Abstract) InverseProblemEIT< matlab.mixin.Copyable
         % cheb_set
         cond_values
         coeff_matrix
+        saved_info_elem_currents
         n_coeffs
         img
         img_0
         elem_currents_0
-        elem_currents
+        % elem_currents
         phantom
         unnormalized_coil_voltages
         pert_amplitude
@@ -27,7 +28,10 @@ classdef (Abstract) InverseProblemEIT< matlab.mixin.Copyable
 
     properties(Hidden)
         scaled_elem_centers
-
+        elem_currents_
+        % for storage of elem_currents
+        already_loaded_cycle
+        already_loaded_elem_currents
     end
 
     methods
@@ -88,21 +92,125 @@ classdef (Abstract) InverseProblemEIT< matlab.mixin.Copyable
             end
         end
 
+        function load_saved_info_elem_currents(obj, fullpath)
+            if nargin == 1
+                [file,location] = uigetfile('*.mat');
+                selectedfile = fullfile(location,file);
+                data = load(selectedfile);
+                obj.saved_info_elem_currents = data;
+            else
+                data = load(fullpath);
+                obj.saved_info_elem_currents = data;
+            end
+        end
+
+        function elem_currents = get_elem_currents(obj, idx)
+            arguments
+                obj
+                idx = [] % it is only for the cond_value
+            end
+            if isempty(obj.saved_info_elem_currents)
+                if isempty(idx)
+                    elem_currents = obj.elem_currents_;
+                else
+                    elem_currents = obj.elem_currents_(:,:,:,idx);
+                end
+            else
+                % find in which file that index is
+                for ii = 1:obj.saved_info_elem_currents(1).n_cycles
+                    l = find(idx == obj.saved_info_elem_currents(ii).cond_values_idxs,1);
+                    if ~isempty(l)
+                        if ii == obj.already_loaded_cycle
+                            % this cycle was loaded already
+                            
+                        else % we load the file first
+                            fullpath = obj.saved_info_elem_currents(ii).dirname + '/' + obj.saved_info_elem_currents(ii).filenames;
+                            buffer_file = matfile(fullpath);
+                            obj.already_loaded_elem_currents = buffer_file.elem_currents;
+                            obj.already_loaded_cycle = ii;
+                        end
+                        elem_currents = obj.already_loaded_elem_currents(:,:,:,l);
+                        break
+                    end
+                end
+            end
+        end
+
+        function save_all_currents(obj, dirname, cond_values_per_cycle)
+            arguments
+                obj
+                dirname = string(datetime('now','format', 'yyyyMMdd_HH_mm_ss'))
+                cond_values_per_cycle = 50
+            end
+
+            measurements_idx = 1:size(obj.EIT.volt_strct.volt,2); % 1:obj.phantom.n_elec
+            % obj.elem_currents = zeros(length(obj.elem_centers), 3, obj.phantom.n_elec, size(obj.cond_values,2));
+             
+            n_cond_values = size(obj.cond_values,2);
+            n_cycles = ceil(n_cond_values/cond_values_per_cycle);
+
+            filenames = cell(n_cycles,1);
+            cond_values_idxs = cell(n_cycles,1);
+            l0=0;
+            for ii = 1:n_cycles
+                filenames{ii} = sprintf('%03d.mat', ii);
+                idxs = l0+(1:cond_values_per_cycle);
+                l0 = idxs(end);
+                if l0 > n_cond_values
+                    idxs = idxs(1): n_cond_values;
+                end
+                cond_values_idxs{ii} = idxs;             
+            end
+            mkdir(dirname);
+            % info
+            obj.saved_info_elem_currents = struct('dirname', dirname, ...
+                'filenames', filenames, ...
+                'cond_values_idxs', cond_values_idxs, ...
+                'n_cond_values', n_cond_values, ...
+                'n_cycles', n_cycles);
+
+            fullpath = dirname + '/' + 'info_elem_currents.mat';
+            save(fullpath, 'filenames', ...
+                    'cond_values_idxs', ...
+                    'n_cond_values', ...
+                    'n_cycles', ...
+                    'dirname')
+            
+            % unperturbated current
+            obj.elem_currents_0 = obj.calc_elem_current(0,measurements_idx);
+
+            % all perturbated currents
+            progressbar(0,0)
+            for ii = 1:n_cycles
+                elem_currents = zeros(length(obj.elem_centers), 3, obj.phantom.n_elec, length(cond_values_idxs{ii})); %#ok<PROPLC>
+                progressbar([],0) % Reset 2nd bar
+                for ll = 1:length(cond_values_idxs{ii})
+                    idx = cond_values_idxs{ii}(ll);
+                    elem_currents(:,:,:,ll) = obj.calc_elem_current(idx,measurements_idx); %#ok<PROPLC>
+                    progressbar([],ll/length(cond_values_idxs{ii})) % Update 2nd bar
+                end
+                fullpath = dirname + '/' + filenames{ii};
+                save(fullpath, 'elem_currents', 'idx', '-v7.3');
+                fprintf('%s Cycle %03d saved in %s\n', string(datetime('now','format', 'dd.MM.yy HH:mm:ss')), ii, fullpath)
+                progressbar(ii/n_cycles) % Update 1st bar
+            end
+        end
+
         function calc_all_currents(obj)
-            obj.elem_currents = zeros(length(obj.elem_centers), 3, obj.phantom.n_elec, size(obj.cond_values,2));
+            obj.elem_currents_ = zeros(length(obj.elem_centers), 3, obj.phantom.n_elec, size(obj.cond_values,2));
             measurements_idx = 1:size(obj.EIT.volt_strct.volt,2); % 1:obj.phantom.n_elec
             disp('Calculating currents for each perturbation...')
-            f = waitbar(0,'Calculating currents for each perturbation...');
-            tic;
+            tic
+            progressbar
             for ii = 0:size(obj.cond_values,2)
                 if ii == 0
                     obj.elem_currents_0 = obj.calc_elem_current(ii,measurements_idx);
                     continue
                 end
-                obj.elem_currents(:,:,:,ii) = obj.calc_elem_current(ii,measurements_idx);
-                waitbar(ii/size(obj.cond_values,2),f);        
+                obj.elem_currents_(:,:,:,ii) = obj.calc_elem_current(ii,measurements_idx);
+                waitbar(ii/size(obj.cond_values,2),f);   
+                progressbar(ii/size(obj.cond_values,2))
             end
-            close(f)
             t = duration(0,0,toc, 'Format', 'hh:mm:ss');
             fprintf('It took %s\n', t)
         end
