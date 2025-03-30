@@ -2,19 +2,19 @@ home
 clear
 close all
 
-
-
 init_eidors()
 
 addpath('..')
+addpath('progressbar/')
+
 %%
 phantom.n_elec = 16;
 phantom.elec_radius = 0.005;
 phantom.radius = 0.1;
 phantom.height = 1.*phantom.radius;
 phantom.elec_vert_position = phantom.height/2;
-phantom.max_el_sz = 0.005;
-phantom.maxsz = 0.01;
+phantom.max_el_sz = 0.001;
+phantom.maxsz = 0.005;
 phantom.background = 0.503; % muscle at 1 MHz
 phantom.ball = 0.136; % inflated lung at 1 MHz
 
@@ -22,7 +22,7 @@ current_ampl = 10e-3;
 freq = 1e6;
 pert_amplitude = 1e-6;
 
-max_coeffs = [2,2,2];
+max_coeffs = [8,16,8]; %[radial, angular, vertical]
 
 inv_model = InverseProblemEITDWT(phantom, current_ampl, max_coeffs);
 
@@ -34,10 +34,11 @@ ylabel('y')
 zlabel('z')
 
 %%
+tic
 inv_model.make_basis()
 
 inv_model.calc_cond_values(pert_amplitude)
-
+toc
 % inv_model.assign_values([8,-8], 5);
 % 
 % show_3d_slices(inv_model.img, [0.075], [0], [0]);
@@ -46,7 +47,8 @@ inv_model.calc_cond_values(pert_amplitude)
 
 
 %%
-inv_model.calc_all_currents()
+% inv_model.calc_all_currents()
+inv_model.save_all_currents()
 
 %% B positions
 B_positions = (phantom.radius + 0.01)*exp(-2j*pi*(0:phantom.n_elec-1)/phantom.n_elec + 1j*pi/2);
@@ -71,15 +73,14 @@ for ii = 1:phantom.n_elec
 end
 
 B = zeros(size(B_positions,1), 3, phantom.n_elec, size(inv_model.cond_values,2));
-tic
+progressbar
 for i_cond_values = 1:size(inv_model.cond_values,2)
-    for ii = 1:phantom.n_elec
-    elem_currents = inv_model.elem_currents(:,:,:,i_cond_values);
-    % buffer = inv_model.elem_currents(:,:,ii,i_cond_values);
-    % parfor ii = 1:phantom.n_elec
-    % elem_currents = buffer(:,:,ii);
+    buffer = inv_model.get_elem_currents(i_cond_values);
+    parfor (ii = 1:phantom.n_elec)
+    elem_currents = buffer(:,:,ii);
     B(:,:,ii,i_cond_values) = helpers.calc_B_at_points(B_positions, elem_centers, elem_currents, elem_volumes);
     end
+    progressbar(i_cond_values/size(inv_model.cond_values,2))
 end
 toc
 
@@ -168,11 +169,14 @@ legend('B', 'V', 'total')
 
 
 %%
-x = jacobian\y;
-% lambda = 1e-2;
+% x = jacobian\y;
+% lambda = 5e-3;
 % R = eye(size(jacobian,2));
 % x = (jacobian'*jacobian + lambda.^2*R)\(jacobian'*y);
+lambda = logspace(-3,0,21);
+[xx,FitInfo] = lasso(jacobian,y,'Lambda',lambda);
 
+x= xx(:,1);
 
 elem_values = inv_model.cond_values*x;
 inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
