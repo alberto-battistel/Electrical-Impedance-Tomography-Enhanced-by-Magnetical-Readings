@@ -1,6 +1,6 @@
 home
 clear
-close all
+% close all
 init_eidors()
 
 addpath('..')
@@ -12,8 +12,8 @@ phantom.elec_radius = 0.005;
 phantom.radius = 0.1;
 phantom.height = 1.*phantom.radius;
 phantom.elec_vert_position = phantom.height/2;
-phantom.max_el_sz = 0.005;
-phantom.maxsz = 0.01; % final one to use 0.001
+phantom.max_el_sz = 0.001; % final one to use 0.001
+phantom.maxsz = 0.005; % final one to use 0.005
 phantom.background = 0.503; % muscle at 1 MHz
 
 coil_radia = [0.005, 0.01, 0.015, 0.02, 0.025];
@@ -25,7 +25,6 @@ eit = EIT(phantom, current_ampl);
 
 eit.show_fem()
 eit.calc_elem_current();
-
 
 
 %%
@@ -62,7 +61,7 @@ magnetic_voltages = 2*pi*freq*reshape(integral_values, [], 3, length(coil_radia)
 
 titles = {'Tangential Coils', 'Perpendicolar Coils', 'Coplanar Coils'};
 
-figure(1256)
+figure(6454)
 tiledlayout(3,1)
 for ii = 1:3
     nexttile
@@ -76,16 +75,24 @@ end
 
 %% plot the coil voltage for the first coil
 
-figure(167456)
+figure(6534116)
 tiledlayout(3,1)
 for ii = 1:3
     nexttile
     plot(1:1:phantom.n_elec^2, magnetic_voltages(:,ii,1))
     xlim([0, 257])
-    xlabel('Coil Radium / cm')
+    xlabel('Coil Index')
     ylabel('Coil Voltage / V')
     title(titles{ii})
 end
+
+
+%% plot standard EIT voltages
+figure(912983)
+plot(eit.volt_strct.meas)
+xlim([0, 209])
+xlabel('Electrode Index')
+ylabel('Voltage / V')
 
 
 
