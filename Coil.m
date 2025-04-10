@@ -116,11 +116,11 @@ classdef Coil < matlab.mixin.Copyable
     methods
         function B_values = calc_B_on_mesh(obj, model, measurement_idx)
             elem_centers = model.elem_centers;
-            if isprop(model, 'elem_curr')
+            if isprop(model, 'elem_curr') || isfield(model, 'elem_curr')
                 elem_curr = model.elem_curr;
-            elseif isprop(model, 'elem_currents')
+            elseif isprop(model, 'elem_currents') || isfield(model, 'elem_currents')
                 elem_curr = model.elem_currents;
-            end
+            end 
 
             elem_volumes = model.elem_volumes;
             

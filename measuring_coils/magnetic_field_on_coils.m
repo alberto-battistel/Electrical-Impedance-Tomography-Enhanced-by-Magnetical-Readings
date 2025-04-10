@@ -8,10 +8,10 @@ addpath('..')
 phantom.n_elec = 16;
 phantom.elec_radius = 0.005;
 phantom.radius = 0.1;
-phantom.height = 1.5*phantom.radius;
+phantom.height = 1.*phantom.radius;
 phantom.elec_vert_position = phantom.height/2;
 phantom.max_el_sz = 0.005;
-phantom.maxsz = 0.01;
+phantom.maxsz = 0.01; % to use 0.001
 phantom.background = 0.503; % muscle at 1 MHz
 
 current_ampl = 10e-3;
@@ -28,7 +28,7 @@ current_model.fmdl = eit.fwd_model;
 current_model.img = eit.img;
 current_model.elem_centers = eit.elem_centers;
 current_model.elem_volumes = eit.elem_volumes;
-current_model.elem_curr = eit.elem_curr;
+current_model.elem_currents = eit.elem_currents;
 current_model.measurement_idx = 1:phantom.n_elec;
 
 integral_values = zeros(phantom.n_elec, phantom.n_elec, 3);
