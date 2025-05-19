@@ -148,24 +148,47 @@ y0 = reshape(B0(:,i_component,:),[],1);
 % plot(y)
 % plot(y0)
 
+jacobian_B_all = zeros(3, phantom.n_elec^2, inv_model.n_coeffs);
+jacobian_T_all = zeros(3, phantom.n_elec^2 + 208, inv_model.n_coeffs);
+y_all = zeros(phantom.n_elec^2 + 208, 3);
+for i_component = 1:3
 
-jacobian_B = reshape(jacobian_B_vector(:,i_component,:,:), [], inv_model.n_coeffs);
+    jacobian_B = reshape(jacobian_B_vector(:,i_component,:,:), [], inv_model.n_coeffs);
+    jacobian_B_all(i_component, :,:) = jacobian_B;
+    jacobian_T_all(i_component, :,:) = [jacobian_B/norm(jacobian_B); jacobian_V/norm(jacobian_V)];
+% jacobian = [jacobian_B/norm(jacobian_B); jacobian_V/norm(jacobian_V)];
+    y_B = reshape(y_vector(:,i_component,:),[],1);
 
-jacobian = [jacobian_B/norm(jacobian_B); jacobian_V/norm(jacobian_V)];
-
-y = [y_B/norm(jacobian_B); V/norm(jacobian_V)];
+    y_all(:,i_component) = [y_B/norm(jacobian_B); V/norm(jacobian_V)];
+end
 
 % jacobian = reshape(jacobian_vector(:,i_component,:,:), [], inv_model.n_coeffs-1);
-figure(655); 
-clf; hold on
-svd_B = svd(jacobian_B);
+
+svd_B = zeros(3, phantom.n_elec^2);
+svd_T = zeros(3, phantom.n_elec^2 + 208);
+for i_component = 1:3
+    svd_B(i_component,:) = svd(squeeze(jacobian_B_all(i_component,:,:)));
+    svd_T(i_component,:) = svd(squeeze(jacobian_T_all(i_component,:,:)));
+end
+
 svd_V = svd(jacobian_V);
-svd_j = svd(jacobian);
-plot(svd_B/svd_B(1))
-plot(svd_V/svd_V(1))
-plot(svd_j/svd_j(1))
-set(gca, 'YScale', 'log')
-legend('B', 'V', 'total')
+
+
+figure(655); 
+tiledlayout(1,3)
+for i_component = 1:3
+    nexttile
+    hold on
+    plot(svd_V/svd_V(1))
+
+    plot(svd_B(i_component,:)/svd_B(i_component,1))
+    plot(svd_T(i_component,:)/svd_T(i_component,1))
+    set(gca, 'YScale', 'log')
+    legend('B', 'V', 'total')
+end
+
+
+
 
 
 %%
@@ -232,25 +255,7 @@ nexttile
 show_slices (inv_model.img, cuts )
 
 %%
-% % x = jacobian\y;
-% % lambda = 5e-3;
-% % R = eye(size(jacobian,2));
-% % x = (jacobian'*jacobian + lambda.^2*R)\(jacobian'*y);
-% lambda = logspace(-3,0,21);
-% [xx,FitInfo] = lasso(jacobian,y,'Lambda',lambda);
-% 
-% x= xx(:,1);
-% 
-% elem_values = inv_model.cond_values*x;
-% inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
-% 
-% cuts = [inf, inf, 0.15/2];
-% figure(100)
-% tiledlayout(1,2)
-% nexttile
-% show_slices (model_inho.img, cuts )
-% nexttile
-% show_slices (inv_model.img, cuts )
+
 
 
 
