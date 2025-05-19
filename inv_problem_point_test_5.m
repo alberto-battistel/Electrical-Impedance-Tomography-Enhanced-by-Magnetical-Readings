@@ -133,7 +133,7 @@ jacobian_V = jac*(inv_model.cond_values-1);
 % jacobian_vector = jacobian_vector(:,:,:,2:end);
 
 %%
-i_component = 2;
+i_component = 1;
 
 
 y_vector = B_inho;
@@ -169,16 +169,26 @@ legend('B', 'V', 'total')
 
 
 %%
-% x = jacobian\y;
-% lambda = 5e-3;
-% R = eye(size(jacobian,2));
-% x = (jacobian'*jacobian + lambda.^2*R)\(jacobian'*y);
-lambda = logspace(-3,0,21);
-[xx,FitInfo] = lasso(jacobian,y,'Lambda',lambda);
+lambdas = logspace(-20,-3,100);
+[res_norms, x_norms, x_lambdas, solutions] = calc_L_curve(jacobian, y, lambdas);
 
-x= xx(:,1);
+figure(1552)
+tiledlayout(2,1)
+nexttile
+loglog(res_norms, x_norms)
+xlabel('||Ax - b||');
+ylabel('||x||');
+title('L-curve');
 
-elem_values = inv_model.cond_values*x;
+nexttile
+loglog(lambdas, res_norms)
+xlabel('\lambda');
+ylabel('||Ax - b||');
+
+
+ll = find(lambdas< 1e-14, 1,"last");
+
+elem_values = inv_model.cond_values*x_lambdas(:,ll);
 inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
 
 cuts = [inf, inf, 0.15/2];
@@ -188,6 +198,59 @@ nexttile
 show_slices (model_inho.img, cuts )
 nexttile
 show_slices (inv_model.img, cuts )
+
+
+%%
+[res_norms, x_norms, x_lambdas, solutions] = calc_L_curve(jacobian_V/norm(jacobian_V), V/norm(jacobian_V), lambdas);
+
+
+figure(45532)
+tiledlayout(2,1)
+nexttile
+loglog(res_norms, x_norms)
+xlabel('||Ax - b||');
+ylabel('||x||');
+title('L-curve');
+
+nexttile
+loglog(lambdas, res_norms)
+xlabel('\lambda');
+ylabel('||Ax - b||');
+
+
+ll = find(lambdas< 1e-12, 1,"last");
+x = x_lambdas(:,ll);
+elem_values = inv_model.cond_values*x;
+inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
+
+cuts = [inf, inf, 0.15/2];
+figure(965)
+tiledlayout(1,2)
+nexttile
+show_slices (model_inho.img, cuts )
+nexttile
+show_slices (inv_model.img, cuts )
+
+%%
+% % x = jacobian\y;
+% % lambda = 5e-3;
+% % R = eye(size(jacobian,2));
+% % x = (jacobian'*jacobian + lambda.^2*R)\(jacobian'*y);
+% lambda = logspace(-3,0,21);
+% [xx,FitInfo] = lasso(jacobian,y,'Lambda',lambda);
+% 
+% x= xx(:,1);
+% 
+% elem_values = inv_model.cond_values*x;
+% inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
+% 
+% cuts = [inf, inf, 0.15/2];
+% figure(100)
+% tiledlayout(1,2)
+% nexttile
+% show_slices (model_inho.img, cuts )
+% nexttile
+% show_slices (inv_model.img, cuts )
 
 
 
