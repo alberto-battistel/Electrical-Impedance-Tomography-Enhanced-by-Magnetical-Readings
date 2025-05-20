@@ -121,7 +121,10 @@ end
 
 
 %%
-jacobian_B_vector = (B-B0)/pert_amplitude;
+
+B_factor = 1e4;
+
+jacobian_B_vector = B_factor*(B-B0)/pert_amplitude;
 % jacobian_B_vector = (B)/pert_amplitude;
 
 %%
@@ -140,7 +143,7 @@ jacobian_V = jac*(inv_model.cond_values-1);
 y_vector = B_inho;
 % y_B = reshape(y_vector(:,i_component,:),[],1);
 % y0 = reshape(B0(:,i_component,:),[],1);
-noise_fun = @(y) y+1e-2*rms(y,1).*randn(size(y));
+noise_fun = @(y) y+1e-8*rms(y,1).*randn(size(y));
 y_B_noise = noise_fun(y_B);
 y_V_noise = noise_fun(V);
 
@@ -162,8 +165,8 @@ for i_component = 1:3
     jacobian_T_all(i_component, :,:) = [jacobian_B/norm(jacobian_B); jacobian_V/norm(jacobian_V)];
     % jacobian_T_all(i_component, :,:) = [jacobian_B; jacobian_V];
 % jacobian = [jacobian_B/norm(jacobian_B); jacobian_V/norm(jacobian_V)];
-    y_B = reshape(y_vector(:,i_component,:),[],1);
-    y0 = reshape(B0(:,i_component,:),[],1);
+    y_B = B_factor*reshape(y_vector(:,i_component,:),[],1);
+    y0 = B_factor*reshape(B0(:,i_component,:),[],1);
 
     y_B_noise = noise_fun(y_B);
     y_V_noise = noise_fun(V);
