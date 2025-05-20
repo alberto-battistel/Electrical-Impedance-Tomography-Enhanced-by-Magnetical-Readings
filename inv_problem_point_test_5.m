@@ -122,10 +122,11 @@ end
 
 %%
 jacobian_B_vector = (B-B0)/pert_amplitude;
+% jacobian_B_vector = (B)/pert_amplitude;
 
 %%
-
-V = model_inho.volt_strct.meas - model_homo.volt_strct.meas;
+V0 = model_homo.volt_strct.meas;
+V = model_inho.volt_strct.meas - V0;
 
 
 jac = calc_jacobian(inv_model.img_0);
@@ -133,14 +134,15 @@ jacobian_V = jac*(inv_model.cond_values-1);
 % jacobian_vector = jacobian_vector(:,:,:,2:end);
 
 %%
-i_component = 1;
+% i_component = 1;
 
 
 y_vector = B_inho;
-y_B = reshape(y_vector(:,i_component,:),[],1);
-y0 = reshape(B0(:,i_component,:),[],1);
-% noise = std(y).*randn(size(y));
-% y = y + 1e-2*noise;
+% y_B = reshape(y_vector(:,i_component,:),[],1);
+% y0 = reshape(B0(:,i_component,:),[],1);
+noise_fun = @(y) y+1e-2*rms(y,1).*randn(size(y));
+y_B_noise = noise_fun(y_B);
+y_V_noise = noise_fun(V);
 
 % figure(521)
 % clf
@@ -151,15 +153,24 @@ y0 = reshape(B0(:,i_component,:),[],1);
 jacobian_B_all = zeros(3, phantom.n_elec^2, inv_model.n_coeffs);
 jacobian_T_all = zeros(3, phantom.n_elec^2 + 208, inv_model.n_coeffs);
 y_all = zeros(phantom.n_elec^2 + 208, 3);
+y_all_noise = zeros(phantom.n_elec^2 + 208, 3);
+
 for i_component = 1:3
 
     jacobian_B = reshape(jacobian_B_vector(:,i_component,:,:), [], inv_model.n_coeffs);
     jacobian_B_all(i_component, :,:) = jacobian_B;
     jacobian_T_all(i_component, :,:) = [jacobian_B/norm(jacobian_B); jacobian_V/norm(jacobian_V)];
+    % jacobian_T_all(i_component, :,:) = [jacobian_B; jacobian_V];
 % jacobian = [jacobian_B/norm(jacobian_B); jacobian_V/norm(jacobian_V)];
     y_B = reshape(y_vector(:,i_component,:),[],1);
+    y0 = reshape(B0(:,i_component,:),[],1);
 
-    y_all(:,i_component) = [y_B/norm(jacobian_B); V/norm(jacobian_V)];
+    y_B_noise = noise_fun(y_B);
+    y_V_noise = noise_fun(V);
+
+    y_all(:,i_component) = [(y_B-y0)/norm(jacobian_B); V/norm(jacobian_V)];
+    y_all_noise(:,i_component) = [(y_B_noise-y0)/norm(jacobian_B); y_V_noise/norm(jacobian_V)];
+    % y_all(:,i_component) = [(y_B); V];
 end
 
 % jacobian = reshape(jacobian_vector(:,i_component,:,:), [], inv_model.n_coeffs-1);
@@ -173,26 +184,49 @@ end
 
 svd_V = svd(jacobian_V);
 
+norm_svd_V = svd_V/svd_V(1);
+norm_svd_B = zeros(3, phantom.n_elec^2);
+norm_svd_T = zeros(3, phantom.n_elec^2 + 208);
+for i_component = 1:3
+    norm_svd_B(i_component,:) = svd_B(i_component,:)/svd_B(i_component,1);
+    norm_svd_T(i_component,:) = svd_T(i_component,:)/svd_T(i_component,1);
+end
 
 figure(655); 
 tiledlayout(1,3)
 for i_component = 1:3
     nexttile
     hold on
-    plot(svd_V/svd_V(1))
+    plot(norm_svd_V)
 
-    plot(svd_B(i_component,:)/svd_B(i_component,1))
-    plot(svd_T(i_component,:)/svd_T(i_component,1))
+    plot(norm_svd_B(i_component,:))
+    plot(norm_svd_T(i_component,:))
     set(gca, 'YScale', 'log')
-    legend('B', 'V', 'total')
+    legend('V', 'B', 'total')
+end
+
+
+%% for TSVD
+
+limit = 1e-2;
+svd_B_limit_1 = zeros(3,1);
+svd_T_limit_1 = zeros(3,1);
+for i_component = 1:3
+    ll = find(norm_svd_B(i_component,:)>=limit,1,"last");
+    svd_B_limit_1(i_component,1) = ll;
+
+    ll = find(norm_svd_T(i_component,:)>=limit,1,"last");
+    svd_T_limit_1(i_component,1) = ll;
+
 end
 
 
 
-
-
 %%
+i_component = 2;
 lambdas = logspace(-20,-3,100);
+jacobian = squeeze(jacobian_T_all(i_component,:,:));
+y = y_all_noise(:,i_component);
 [res_norms, x_norms, x_lambdas, solutions] = calc_L_curve(jacobian, y, lambdas);
 
 figure(1552)
@@ -209,7 +243,9 @@ xlabel('\lambda');
 ylabel('||Ax - b||');
 
 
-ll = find(lambdas< 1e-14, 1,"last");
+ll = find(lambdas< 1e-3, 1,"last");
+
+
 
 elem_values = inv_model.cond_values*x_lambdas(:,ll);
 inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
@@ -224,7 +260,7 @@ show_slices (inv_model.img, cuts )
 
 
 %%
-[res_norms, x_norms, x_lambdas, solutions] = calc_L_curve(jacobian_V/norm(jacobian_V), V/norm(jacobian_V), lambdas);
+[res_norms, x_norms, x_lambdas, solutions] = calc_L_curve(jacobian_V/norm(jacobian_V), y_V_noise/norm(jacobian_V), lambdas);
 
 
 figure(45532)
@@ -241,13 +277,13 @@ xlabel('\lambda');
 ylabel('||Ax - b||');
 
 
-ll = find(lambdas< 1e-12, 1,"last");
+ll = find(lambdas< 1e-4, 1,"last");
 x = x_lambdas(:,ll);
 elem_values = inv_model.cond_values*x;
 inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
 
 cuts = [inf, inf, 0.15/2];
-figure(965)
+figure(1000)
 tiledlayout(1,2)
 nexttile
 show_slices (model_inho.img, cuts )
@@ -255,8 +291,23 @@ nexttile
 show_slices (inv_model.img, cuts )
 
 %%
+i_component = 3;
+
+jacobian = squeeze(jacobian_T_all(i_component,:,:));
+y = y_all_noise(:,i_component);
+[x] = TSVD(jacobian, y, svd_T_limit_1(i_component));
 
 
+elem_values = inv_model.cond_values*x;
+inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
+
+cuts = [inf, inf, 0.15/2];
+figure(10000)
+tiledlayout(1,2)
+nexttile
+show_slices (model_inho.img, cuts )
+nexttile
+show_slices (inv_model.img, cuts )
 
 
 
