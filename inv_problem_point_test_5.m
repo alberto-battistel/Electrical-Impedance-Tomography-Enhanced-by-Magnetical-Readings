@@ -1,11 +1,14 @@
 home
 clear
 close all
+%%
 
 init_eidors()
 
 addpath('..')
 addpath('progressbar/')
+
+
 
 %%
 phantom.n_elec = 16;
@@ -90,17 +93,27 @@ toc
 phantom.background = 1;
 phantom.ball = 0.1; % inflated lung at 1 MHz
 
+try % in the case you were rerunning
+    phantom = rmfield(phantom, 'extra');
+end
+
 current_ampl = 10e-3;
 freq = 1e6;
 
 model_homo = EIT(phantom, current_ampl);
 
+% extra_str = @(bottom_left_corner, right_top_corner) {'cube', ...
+    % sprintf('solid cube = orthobrick(%.4f,%.4f,%.4f;%.4f,%.4f,%.4f);', ...
+    %     bottom_left_corner(1), bottom_left_corner(2), bottom_left_corner(3), ...
+    %     right_top_corner(1), right_top_corner(2), right_top_corner(3))};
+% phantom.extra = extra_str([-0.07,-0.04,0], [-0.02, 0.02, phantom.height]);
+% phantom.extra = extra_str([-0.06,-0.02,0], [-0.02, 0.02, phantom.height]);
 
-extra_str = @(bottom_left_corner, right_top_corner) {'cube', ...
-    sprintf('solid cube = orthobrick(%.4f,%.4f,%.4f;%.4f,%.4f,%.4f);', ...
-        bottom_left_corner(1), bottom_left_corner(2), bottom_left_corner(3), ...
-        right_top_corner(1), right_top_corner(2), right_top_corner(3))};
-phantom.extra = extra_str([-0.07,-0.04,0], [-0.02, 0.02, phantom.height]);
+center = [-0.02, 0, phantom.height/2];
+radius = 0.02;
+extra_str = @(radius, center){'ball', ...
+    sprintf('solid ball = sphere(%.4f,%.4f,%.4f;%.4f);', center(1), center(2), center(3), radius)};
+phantom.extra = extra_str(radius, center);
 
 model_inho = EIT(phantom, current_ampl);
 model_inho.calc_elem_current();
@@ -127,12 +140,12 @@ jacobian_B_vector = (B-B0)/pert_amplitude;
 V0 = model_homo.volt_strct.meas;
 V = model_inho.volt_strct.meas - V0;
 
-jac = calc_jacobian(inv_model.img_0);
-jacobian_V_ = jac*(inv_model.cond_values-1);
-% jacobian_vector = jacobian_vector(:,:,:,2:end);
+jac_EIT = calc_jacobian(inv_model.img_0);
+jacobian_V_ = jac_EIT*(inv_model.cond_values-1);
+
 
 %%
-noise_level = 1e-1;
+noise_level = 1e-3;
 fprintf('\n\nNoise level: %1.2g RMS\n', noise_level)
 noise_fun = @(y) y+noise_level*rms(y,1).*randn(size(y));
 
@@ -142,6 +155,7 @@ jacobian_B_all = zeros(3, phantom.n_elec^2, inv_model.n_coeffs);
 jacobian_T_all = zeros(3, phantom.n_elec^2 + 208, inv_model.n_coeffs);
 y_all = zeros(phantom.n_elec^2 + 208, 3);
 y_all_noise = zeros(phantom.n_elec^2 + 208, 3);
+
 
 for i_component = 1:3
 
@@ -157,12 +171,14 @@ for i_component = 1:3
     y_V_noise = noise_fun(V)/norm(jacobian_V);
 
     y_all(:,i_component) = [(y_B-y0); V];
-    y_all_noise(:,i_component) = [(y_B_noise-y0)/norm(jacobian_B); y_V_noise/norm(jacobian_V)];
+    y_all_noise(:,i_component) = [(y_B_noise-y0); y_V_noise];
 end
 
 
 %%
+
 svd_V = svd(jacobian_V);
+svd_E = svd(jac_EIT);
 svd_B = zeros(3, phantom.n_elec^2);
 svd_T = zeros(3, phantom.n_elec^2 + 208);
 for i_component = 1:3
@@ -171,6 +187,7 @@ for i_component = 1:3
 end
 
 norm_svd_V = svd_V/svd_V(1);
+norm_svd_E = svd(jac_EIT)/svd_E(1);
 norm_svd_B = zeros(3, phantom.n_elec^2);
 norm_svd_T = zeros(3, phantom.n_elec^2 + 208);
 for i_component = 1:3
@@ -179,11 +196,13 @@ for i_component = 1:3
 end
 
 figure(655); 
+clf
 tiledlayout(1,3)
 titles = {'\rho', '\theta', 'z'};
 for i_component = 1:3
     nexttile
     hold on
+    plot(norm_svd_E)
     plot(norm_svd_V)
 
     plot(norm_svd_B(i_component,:))
@@ -193,27 +212,29 @@ for i_component = 1:3
         ylabel('Norm. S')
     end
     xlabel('S index')
-    ylim([1e-10,1])
+    ylim([1e-5,1])
     x = [0,400];
     y = 1e-2*[1,1];
     line(x,y, 'color', 'k', 'linestyle', '--')
     title(titles{i_component})
 end
-legend('V', 'B', 'Total','Location','southeast')
+legend('EIT', 'V', 'B', 'Total','Location','southeast')
 
 %% for TSVD
 
 limit = 1e-3;
-svd_B_limit_1 = zeros(3,1);
-svd_T_limit_1 = zeros(3,1);
+svd_B_limit_idx = zeros(3,1);
+svd_T_limit_idx = zeros(3,1);
 for i_component = 1:3
     ll = find(norm_svd_B(i_component,:)>=limit,1,"last");
-    svd_B_limit_1(i_component,1) = ll;
+    svd_B_limit_idx(i_component,1) = ll;
 
     ll = find(norm_svd_T(i_component,:)>=limit,1,"last");
-    svd_T_limit_1(i_component,1) = ll;
+    svd_T_limit_idx(i_component,1) = ll;
 end
 
+
+svd_V_limit_idx = find(norm_svd_V >=limit,1,"last");
 
 
 %% L-curves total jacobian
@@ -250,7 +271,7 @@ for i_component = 1:3
     lambda_idx(i_component) = find(lambdas< lambda_value_components(i_component), 1,"last");
 end
 
-cuts = [inf, inf, 0.15/2];
+cuts = [inf, inf, phantom.height/2];
 figure(100)
 tiledlayout(1,4)
 nexttile
@@ -272,7 +293,7 @@ end
 
 disp('SSIM Tikhonov Total Jacobian')
 for i_component = 1:3
-    ssim(squeeze(rec_images(i_component,:,:)), ref_image)
+    calc_ssim_mask(squeeze(rec_images(i_component,:,:)), ref_image)
 end
 
 %% tikhonov reconstruction V
@@ -296,7 +317,6 @@ x = x_lambdas(:,ll);
 elem_values = inv_model.cond_values*x;
 inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
 
-cuts = [inf, inf, 0.15/2];
 figure(1000)
 tiledlayout(1,2)
 nexttile
@@ -307,11 +327,30 @@ rec_images = show_slices (inv_model.img, cuts );
 title('V')
 
 disp('SSIM Tikhonov Voltage Jacobian')
-ssim(rec_images, ref_image)
+calc_ssim_mask(rec_images, ref_image)
+
+%% tikhonov standard EIT
+lambda = 1e-4;
+[res_norms, x_norms, x_lambdas, solutions] = calc_L_curve(jac_EIT, y_V_noise, lambda);
+
+
+elem_values = inv_model.cond_values*x;
+inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
+
+figure(356000)
+tiledlayout(1,2)
+nexttile
+ref_image = show_slices (model_inho.img, cuts );
+title('Reference')
+nexttile
+rec_images = show_slices (inv_model.img, cuts );
+title('EIT')
+
+disp('SSIM Tikhonov EIT Jacobian')
+calc_ssim_mask(rec_images, ref_image)
 
 %% TSVD reconstruction total jacobian
 
-cuts = [inf, inf, 0.15/2];
 figure(10000)
 tiledlayout(1,4)
 nexttile
@@ -323,7 +362,7 @@ titles = {'\rho', '\theta', 'z'};
 for i_component = 1:3
     jacobian = squeeze(jacobian_T_all(i_component,:,:));
     y = y_all_noise(:,i_component);
-    [x] = TSVD(jacobian, y, svd_T_limit_1(i_component));
+    [x] = TSVD(jacobian, y, svd_T_limit_idx(i_component));
     
     elem_values = inv_model.cond_values*x;
     inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
@@ -335,6 +374,43 @@ end
 
 disp('SSIM TSVD Total Jacobian')
 for i_component = 1:3
-    ssim(squeeze(rec_images(i_component,:,:)), ref_image)
+    calc_ssim_mask(squeeze(rec_images(i_component,:,:)), ref_image)
 end
+
+
+%% TSVD reconstruction V jacobian
+
+[x] = TSVD(jacobian_V/norm(jacobian_V), y_V_noise/norm(jacobian_V), svd_V_limit_idx);
+elem_values = inv_model.cond_values*x;
+inv_model.img.elem_data = elem_values - inv_model.img_0.elem_data;
+
+figure(14350)
+tiledlayout(1,2)
+nexttile
+ref_image = show_slices (model_inho.img, cuts );
+title('Reference')
+nexttile
+rec_images = show_slices (inv_model.img, cuts );
+title('V')
+
+disp('SSIM TSVD Voltage Jacobian')
+% ssim(rec_images, ref_image)
+calc_ssim_mask(rec_images, ref_image)
+
+
+
+%% functions
+
+function ssimval = calc_ssim_mask(A, ref)
+
+empty_pixel_value = ref(1,1);
+mask = ref ~= empty_pixel_value;
+
+[ssimval,ssimmap] = ssim(A,ref);
+
+ssimval = mean(mean(ssimmap(mask)));
+
+
+end
+
 
